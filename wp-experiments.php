@@ -5,7 +5,7 @@
 	Description: Test your pages and posts to get the most page views.
 	Author: Jason Funk
 	Author URI: http://jasonfunk.net
-	Version: 0.0.1
+	Version: 1.0
 	License: GPLv3
 */
 
