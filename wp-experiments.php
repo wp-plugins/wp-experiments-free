@@ -2,7 +2,7 @@
 /*
 	Plugin Name: WP Experiments Free
 	Plugin URI: http://wpexperiments.com
-	Description: Test your pages and posts to get the most page views.
+	Description: Test the titles of your pages and posts to get the most page views. More info: http://wpexperiments.com
 	Author: Jason Funk
 	Author URI: http://jasonfunk.net
 	Version: 1.0
