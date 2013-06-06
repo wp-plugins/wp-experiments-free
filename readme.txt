@@ -1,7 +1,7 @@
 === WP Experiments Free ===
 Contributors: jasonlfunk
 Donate link: http://wpexperiments.com/
-Tags: testing
+Tags: optimization, headlines, split testing, titles, t
 Requires at least: 3.3
 Tested up to: 3.5
 Stable tag: 1.0
