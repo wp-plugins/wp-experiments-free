@@ -1,21 +1,25 @@
 === WP Experiments Free ===
 Contributors: jasonlfunk
 Donate link: http://wpexperiments.com/
-Tags: optimization, headlines, split testing, titles, testing
+Tags: conversions, ab testing, optimization, headlines, split testing, titles, t
 Requires at least: 3.3
-Tested up to: 3.5
-Stable tag: 1.0
+Tested up to: 3.8
+Stable tag: 1.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-Test multiple titles for a post to discover which gets more page views.
+Split (A/B) test multiple titles for a post and discover which gets more page views. Great way to increase click through rates.
 
 == Description ==
 
 #### Most people decide to read your article based solely on it's title.
 Are your titles getting in your way?
 
-Test your titles and discover what your readers find interesting. Get more clicks.
+Test your titles and discover what your readers find interesting. Get more clicks. Get more revenue.
+
+Use the process of A/B Testing to try different variations of your post titles to get a higher click through rate. It's very simple to add multiple versions of an article title that will be randomly displayed in any post list. Each time the article is listed it is counted as an impression. Each time the article is visited it is counted as a view. This will easily let you see what percentage of impressions get clicked on for each title.
+
+Do you need to test more than just your post titles? Check out WP Experiments Pro at http://wpexperiments.com for even more advanced content testing.
 
 == Installation ==
 
@@ -25,7 +29,7 @@ Test your titles and discover what your readers find interesting. Get more click
 
 = Do you have a question? =
 
-Check out http://www.wpexperiments.com for more information
+Check out http://wpexperiments.com for more information.
 
 == Screenshots ==
 

@@ -276,13 +276,15 @@ class WPEx {
 
 	// Based on code from https://developer.amazon.com/sdk/ab-testing/reference/ab-math.html
 	function conf_int($c,$i) {
+		if($c == 0 || $i == 0) return 100;
 		$sample = $i;
 		$probabilty = $c/$i;
 		$standard_error = $this->standard_error($probabilty, $sample);
 		return round($standard_error*1.65*100,2);
 	}
 	function standard_error($prob,$sample) {
-		return sqrt( ($prob*(1-$prob)) / $sample);
+		if($sample == 0) return 0;
+		return sqrt(($prob*(1-$prob)) / $sample);
 	}
 
 	// (((((((((((((((((((((((((((((())))))))))))))))))))))))))))))
@@ -291,6 +293,7 @@ class WPEx {
 	// Calculation of the conversion rate
 	function cr($t) 
 	{ 
+		if($t[0] == 0) return 0;
 	    return $t[1]/$t[0]; 
 	}
 
