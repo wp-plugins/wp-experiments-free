@@ -82,7 +82,6 @@ class WPEx {
 
 		if($result) {
 			$sql = "SELECT id,title FROM " . $this->titles_tbl . " WHERE enabled AND id=".$result;
-			error_log($sql);
 			$result = $wpdb->get_row($sql);
 			if($result) {
 				$from_cookie = true;
@@ -116,7 +115,7 @@ class WPEx {
 		if($from_cookie && (is_single($id) || is_page($id))) {
 			$this->viewed($id,$title_id);	
 		} 
-		return $title;
+		return stripslashes($title);
 	}
 
 	function enqueue() {
@@ -154,6 +153,7 @@ class WPEx {
 			$data = $this->get_sl_data($row['stats']);
 			$row['confidence'] = $this->conf_int($row['clicks'],$row['impressions']);
 			$row['stats_str'] = join(",",$data);
+			$row['title'] = stripslashes($row['title']);
 			if($winners !== NULL){
 				if(in_array($row['id'], $winners)) {
 					$row['winner'] = "winner";
@@ -276,13 +276,15 @@ class WPEx {
 
 	// Based on code from https://developer.amazon.com/sdk/ab-testing/reference/ab-math.html
 	function conf_int($c,$i) {
+		if($c == 0 || $i == 0) return 100;
 		$sample = $i;
 		$probabilty = $c/$i;
 		$standard_error = $this->standard_error($probabilty, $sample);
 		return round($standard_error*1.65*100,2);
 	}
 	function standard_error($prob,$sample) {
-		return sqrt( ($prob*(1-$prob)) / $sample);
+		if($sample == 0) return 0;
+		return sqrt(($prob*(1-$prob)) / $sample);
 	}
 
 	// (((((((((((((((((((((((((((((())))))))))))))))))))))))))))))
@@ -291,6 +293,7 @@ class WPEx {
 	// Calculation of the conversion rate
 	function cr($t) 
 	{ 
+		if($t[0] == 0) return 0;
 	    return $t[1]/$t[0]; 
 	}
 

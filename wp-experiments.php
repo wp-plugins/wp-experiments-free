@@ -1,11 +1,11 @@
 <?php
 /*
 	Plugin Name: WP Experiments Free
-	Plugin URI: http://wp-experiments.com
-	Description: Test your pages and posts to get the most page views.
+	Plugin URI: http://wpexperiments.com
+	Description: A/B test the titles of your pages and posts to get the most page views. More info: http://wpexperiments.com
 	Author: Jason Funk
 	Author URI: http://jasonfunk.net
-	Version: 0.0.1
+	Version: 1.2
 	License: GPLv3
 */
 
