@@ -82,7 +82,6 @@ class WPEx {
 
 		if($result) {
 			$sql = "SELECT id,title FROM " . $this->titles_tbl . " WHERE enabled AND id=".$result;
-			error_log($sql);
 			$result = $wpdb->get_row($sql);
 			if($result) {
 				$from_cookie = true;
@@ -116,7 +115,7 @@ class WPEx {
 		if($from_cookie && (is_single($id) || is_page($id))) {
 			$this->viewed($id,$title_id);	
 		} 
-		return $title;
+		return stripslashes($title);
 	}
 
 	function enqueue() {
@@ -154,6 +153,7 @@ class WPEx {
 			$data = $this->get_sl_data($row['stats']);
 			$row['confidence'] = $this->conf_int($row['clicks'],$row['impressions']);
 			$row['stats_str'] = join(",",$data);
+			$row['title'] = stripslashes($row['title']);
 			if($winners !== NULL){
 				if(in_array($row['id'], $winners)) {
 					$row['winner'] = "winner";
