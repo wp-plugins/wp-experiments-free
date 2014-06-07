@@ -2,9 +2,9 @@
 Contributors: jasonlfunk
 Donate link: http://wpexperiments.com/
 Tags: conversions, ab testing, optimization, headlines, split testing, titles, t
-Requires at least: 3.3
-Tested up to: 3.8
-Stable tag: 1.2
+Requires at least: 3.9
+Tested up to: 3.9.1
+Stable tag: 1.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -36,6 +36,10 @@ Check out http://wpexperiments.com for more information.
 1. Add multiple titles and see how many people view the article with that title.
 
 == Changelog ==
+
+= 1.4 =
+* More advanced propability engine
+* No more "Winners" and "Losers" only a weighted distribution based on performance
 
 = 1.3 =
 * Strip slashes in titles
