@@ -1,10 +1,10 @@
 === WP Experiments Free ===
 Contributors: jasonlfunk
-Donate link: http://wpexperiments.com/
+Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ZMDLAG7TMAN3E
 Tags: conversions, ab testing, optimization, headlines, split testing, titles, t
 Requires at least: 3.9
 Tested up to: 3.9.1
-Stable tag: 1.4
+Stable tag: 1.5
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
