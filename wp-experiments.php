@@ -1,17 +1,18 @@
 <?php
 /*
 	Plugin Name: WP Experiments Free
-	Plugin URI: http://wp-experiments.com
-	Description: Test your pages and posts to get the most page views.
+	Plugin URI: http://wpexperiments.com
+	Description: A/B test the titles of your pages and posts to get the most page views. More info: http://wpexperiments.com
 	Author: Jason Funk
 	Author URI: http://jasonfunk.net
-	Version: 0.0.1
+	Version: 1.7
 	License: GPLv3
 */
 
 global $wpex_db_version;
 $wpex_db_version = "0.0.1";
 
+include('user-agents.php');
 include('wpex.class.php');
 
 register_activation_hook( __FILE__, 'wpex_install' );

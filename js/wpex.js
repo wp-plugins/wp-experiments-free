@@ -57,33 +57,20 @@
 		}
 
 		$e = $("<div class='wpex-title-exp-addon' />");
-		$estatus = $("<div class='wpex-status wpex-"+trow['winner']+"'></div>");
-		$e.append($estatus);
-		$estatus.qtip({
-			content: function() {
-				if($(this).hasClass("wpex-unknown")) {
-					return "More data is neccessary to determine a winner.";
-				} else if($(this).hasClass("wpex-winner")) {
-					return "The test case is a winner.";
-				} else {
-					return "The test case is a loser.";
-				}
-			},
-			position: {
-				my: 'top middle',
-				at: 'bottom middle'
-			},
-			style: { classes: 'qtip-shadow qtip-light' }
-		});
 
-		$estats = $("<div class='wpex-stats' confidence='"+ trow.confidence +"'>"+trow.clicks+'/'+trow.impressions+" </div>");
+		$estats = $("<div class='wpex-stats'>"+trow.clicks+'/'+trow.impressions+"</div>");
 		$e.append($estats);
 
 		$esl = $("<div class='wpex-sl'><!--"+trow.stats_str+"--></div>");
 		$e.append($esl);
 
+		if(typeof trow.probability !== "undefined") {
+			$eprob = $("<div class='wpex-prob'>"+trow.probability+"%</div>");
+			$e.append($eprob);
+		}
+
 		if(trow.title !== "__WPEX_MAIN__") {
-			$edel = $("<div class='wpex-del'></div>");
+			$edel = $("<div class='wpex-del dashicons dashicons-no'></div>");
 			$edel.click(function(){
 				$this = $(this);
 				var id = $this.parent().prev().attr("wpex-id");
@@ -118,12 +105,11 @@
 			content: function() {
 				ms = $(this).text().match(/(\d+)\/(\d+)/);
 				if(ms) {
-					p = Math.round( (ms[1]/ms[2]) * 10000) / 100;
+					p = Math.round( (ms[1]/ms[2]) * 1000) / 10;
 					if(isNaN(p)) {
-						str =  (isNaN(p) ? "0" : p) + "%  ";
+						str = (isNaN(p) ? "0" : p) + "%";
 					} else {
-						c = parseFloat($(this).attr("confidence"));
-						str = (Math.round((p-c)*100)/100) + "% - " + (Math.round((p+c)*100)/100) + "%";
+						str = p+"%";
 					}
 					str += "<br/>";
 					str +=  ms[1] + " view" + ((ms[1] == "1") ? "" : "s") + "<br/>";
