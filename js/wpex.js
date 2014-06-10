@@ -64,8 +64,10 @@
 		$esl = $("<div class='wpex-sl'><!--"+trow.stats_str+"--></div>");
 		$e.append($esl);
 
-		$eprob = $("<div class='wpex-prob'>"+trow.probability+"%</div>");
-		$e.append($eprob);
+		if(typeof trow.probability !== "undefined") {
+			$eprob = $("<div class='wpex-prob'>"+trow.probability+"%</div>");
+			$e.append($eprob);
+		}
 
 		if(trow.title !== "__WPEX_MAIN__") {
 			$edel = $("<div class='wpex-del dashicons dashicons-no'></div>");
