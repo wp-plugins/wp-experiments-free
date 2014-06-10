@@ -46,6 +46,8 @@ class WPEx {
 	function viewed($post_id,$title_id)
 	{
 		global $wpdb;
+
+		if($this->is_bot()) return;
 		
 		if(in_array($post_id,$_SESSION['wpex_viewed'])) {
 			return;
@@ -82,32 +84,63 @@ class WPEx {
 
 		if($result) {
 			$sql = "SELECT id,title FROM " . $this->titles_tbl . " WHERE enabled AND id=".$result;
-			error_log($sql);
-			$result = $wpdb->get_row($sql);
+			$result = $wpdb->get_row($sql, ARRAY_A);
 			if($result) {
 				$from_cookie = true;
+				$result = array($result);
 			}
 		}
 
 		if(!$result) {
-			$sql = "SELECT id,title FROM " . $this->titles_tbl . " WHERE enabled AND post_id=".$id." ORDER BY impressions ASC LIMIT 1";
-			$result = $wpdb->get_row($sql);
+			$sql = "SELECT id,title,impressions,clicks FROM " . $this->titles_tbl . " WHERE enabled AND post_id=".$id;
+			$result = $wpdb->get_results($sql, ARRAY_A);
+		}
+
+
+		if(count($result) > 1) {
+			//Use a beta distribution random number to determine which 
+			//test to show. Based on:
+			// http://www.quora.com/In-A-B-Testing-how-many-conversions-do-you-need-per-variation-for-the-results-to-be-significant
+			require_once dirname(__FILE__).'/libs/PDL/BetaDistribution.php';
+			mt_srand();
+			$max = 0;
+			foreach($result as $t) {
+				// Seed with a 1/2 = 50% probability
+				$i = $t['impressions'] <= 1 ? 2 : $t['impressions'];
+				$c = $t['clicks'] <= 1 ? 1 : $t['clicks'];
+
+				// Always ensure we $i & $c are > 0
+				if($i-$c <= 0) {
+					$i = $c + 1;
+				}
+
+				$bd= new BetaDistribution($c,$i-$c);
+				$r = $bd->_getRNG();
+				if($r > $max) {
+					$test = $t;
+					$max = $r;
+				}
+			}
+
+			$result = $test;
+		} elseif(count($result) == 1) {
+			$result = $result[0];
 		}
 		
 		if($result) {
-			$title_id = $result->id;
-			$title = $result->title == "__WPEX_MAIN__" ? $title : $result->title;
+			$title_id = $result['id'];
+			$title = $result['title'] == "__WPEX_MAIN__" ? $title : $result['title'];
 
 			// If this isn't the post/page and the user hasn't seen this title before, count
 			// it as an impression
 			if(!(is_single($id) || is_page($id)) && !in_array($title_id,$_SESSION['wpex_impressed'])) {
-				$sql = "UPDATE " . $this->titles_tbl ." SET impressions=impressions+1 WHERE id=".$result->id;
+				$sql = "UPDATE " . $this->titles_tbl ." SET impressions=impressions+1 WHERE id=".$result['id'];
 				$wpdb->query($sql);
 
 				$_SESSION['wpex_impressed'][] = $title_id;
 			}
 			
-			$this->set("title",$id,$result->id);
+			$this->set("title",$id,$result['id']);
 		}
 
 		// If this is the page/post and we found the title from 
@@ -116,8 +149,9 @@ class WPEx {
 		if($from_cookie && (is_single($id) || is_page($id))) {
 			$this->viewed($id,$title_id);	
 		} 
-		return $title;
+		return stripslashes($title);
 	}
+
 
 	function enqueue() {
 		wp_enqueue_style('wpexcss', plugins_url('css/wpex.css',__FILE__));
@@ -142,30 +176,46 @@ class WPEx {
 		global $post;
 		global $wpdb;
 
-		$sql = "SELECT * FROM ".$this->titles_tbl." WHERE post_id=".$post->ID;
+		$sql = "SELECT * FROM ".$this->titles_tbl." WHERE enabled AND post_id=".$post->ID;
 		$results = $wpdb->get_results($sql,ARRAY_A);
 
 		$so_title = str_replace("'", "\\'", $post->post_title);
 
-		$winners = $this->get_winner($post->ID);
-		$rows = array();
-		//Find the row for the real title
-		foreach($results as $k => &$row) {
-			$data = $this->get_sl_data($row['stats']);
-			$row['confidence'] = $this->conf_int($row['clicks'],$row['impressions']);
-			$row['stats_str'] = join(",",$data);
-			if($winners !== NULL){
-				if(in_array($row['id'], $winners)) {
-					$row['winner'] = "winner";
-				} else {
-					$row['winner'] = "loser";
-				}
-			} else {
-				$row['winner'] = "unknown";
-			}
+		require_once dirname(__FILE__).'/libs/PDL/BetaDistribution.php';
+			
+		foreach($results as &$test) {
+			$c = $test['clicks'] > 1 ? $test['clicks'] : 1;
+			$i = $test['impressions'] > 1 ? $test['impressions'] : 2;
+
+			if($i-$c <= 0) ($i = $c+1);
+
+			$test['bd'] = new BetaDistribution($c,$i-$c);
 		}
+		
+		$this->statTests = $results;
+		foreach($results as $idx=>&$test) {
+			$this->statChecking = $idx;
+			$test['probability'] = round($this->simpsonsrule() * 100);
+			$data = $this->get_sl_data($test['stats']);
+			$test['stats_str'] = join(",",$data);
+			$test['title'] = stripslashes($test['title']);
+		}
+
+		$rows = $results;
+		
+		$sql = "SELECT * FROM ".$this->titles_tbl." WHERE NOT enabled AND post_id=".$post->ID;
+		$results = $wpdb->get_results($sql,ARRAY_A);
+		$so_title = str_replace("'", "\\'", $post->post_title);
+		foreach($results as $idx=>&$test) {
+			$test['probability'] = 0;
+			$test['stats_str'] = join(",",$data);
+			$test['title'] = stripslashes($test['title']);
+		}
+
+		$rows = array_merge($rows, $results);
+
 		echo "<script type='text/javascript'>";
-		echo "_wpex_data = " . json_encode($results);
+		echo "_wpex_data = " . json_encode($rows);
 		echo "</script>";
 	}
 	
@@ -175,13 +225,11 @@ class WPEx {
 	function get_sl_data($data) {
 		$arr = array(0,0,0,0,0,0,0);
 		$data = unserialize($data);
-		error_log(print_r($data,true));
 		if(!is_array($data)) {
 			return $arr;
 		}
 
 		$today = strtotime("today");
-		error_log($today);
 		for($i=0;$i<7;$i++) {
 			$d = $today-(24*60*60*$i);
 			$arr[$i] = isset($data[$d]) ? $data[$d] : 0;
@@ -225,6 +273,24 @@ class WPEx {
 		endif;
 	}
 
+	function is_bot() {
+		global $_ROBOT_USER_AGENTS;
+		
+		if(isset($_SESSION['wpexpro_is_bot'])) {
+			return $_SESSION['wpexpro_is_bot'];
+		}
+
+		$ua = $_SERVER['HTTP_USER_AGENT'];
+		foreach($_ROBOT_USER_AGENTS as $agent) {
+			if(preg_match("/".$agent."/i", $ua)) {
+				$_SESSION['wpexpro_is_bot'] = TRUE;
+				return TRUE;
+			}
+		}
+
+		$_SESSION['wpexpro_is_bot'] = FALSE;
+		return FALSE;
+	}
 	
 	function get_winner($id) {
 		global $wpdb;
@@ -276,13 +342,15 @@ class WPEx {
 
 	// Based on code from https://developer.amazon.com/sdk/ab-testing/reference/ab-math.html
 	function conf_int($c,$i) {
+		if($c == 0 || $i == 0) return 100;
 		$sample = $i;
 		$probabilty = $c/$i;
 		$standard_error = $this->standard_error($probabilty, $sample);
 		return round($standard_error*1.65*100,2);
 	}
 	function standard_error($prob,$sample) {
-		return sqrt( ($prob*(1-$prob)) / $sample);
+		if($sample == 0) return 0;
+		return sqrt(($prob*(1-$prob)) / $sample);
 	}
 
 	// (((((((((((((((((((((((((((((())))))))))))))))))))))))))))))
@@ -291,6 +359,7 @@ class WPEx {
 	// Calculation of the conversion rate
 	function cr($t) 
 	{ 
+		if($t[0] == 0) return 0;
 	    return $t[1]/$t[0]; 
 	}
 
@@ -324,6 +393,51 @@ class WPEx {
 	      ( $t *( $t * ( $t * ( $t * $b5 + $b4 ) + $b3 ) + $b2 ) + $b1 ));
 	    }
 	}
+
+
+	// Out simpson rule integral approximation f(x)
+	function simpsonf($x){
+		$prod = 1;
+		foreach($this->statTests as $id=>$test) {
+			if($id == $this->statChecking) {
+				$prod *= $test['bd']->_getPDF($x);
+			} else {
+				$prod *= $test['bd']->_getCDF($x);
+			}
+		}
+		// returns f(x) for integral approximation with composite Simpson's rule
+		 return $prod;
+	}
+
+	// Implementation of Simpsons Rule for integral approximations
+	// From: http://www.php.net/manual/en/ref.math.php#61377
+	function simpsonsrule(){
+		$a = 0; $b = 1; $n = 1000;
+		// approximates integral_a_b f(x) dx with composite Simpson's rule with $n intervals
+		// $n has to be an even number
+		// f(x) is defined in "function simpsonf($x)"
+		 if($n%2==0){
+				$h=($b-$a)/$n;
+				$S=$this->simpsonf($a)+$this->simpsonf($b);
+				$i=1;
+				while($i <= ($n-1)){
+					 $xi=$a+$h*$i;
+					 if($i%2==0){
+							$S=$S+2*$this->simpsonf($xi);
+					 }
+					 else{
+							$S=$S+4*$this->simpsonf($xi);
+					 }
+					 $i++;
+				}
+				return($h/3*$S);
+				}
+		 else{
+				return('$n has to be an even number');
+		 }
+	}
+
+
 }
 
 new WPEx;
