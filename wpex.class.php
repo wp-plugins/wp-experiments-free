@@ -109,7 +109,10 @@ class WPEx {
 				$i = $t['impressions'] <= 1 ? 2 : $t['impressions'];
 				$c = $t['clicks'] <= 1 ? 1 : $t['clicks'];
 
-				if($i-$c == 0) $i++;
+				// Always ensure we $i & $c are > 0
+				if($i-$c <= 0) {
+					$i = $c + 1;
+				}
 
 				$bd= new BetaDistribution($c,$i-$c);
 				$r = $bd->_getRNG();
