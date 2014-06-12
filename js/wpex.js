@@ -169,7 +169,7 @@
 	wpexTitleAdd = function(ev){
 		if(jQuery(".wpex-title-exp").length >= _wp_title_limit) {
 			jQuery(".wpex-notice").remove();
-			var alert = jQuery('<div class="updated wpex-notice"><p>Sorry, the free version of WP Title Experiments is limited to 2 titles. <a href="#">Upgrade your license</a> to test as many titles as you like!</p></div>');
+			var alert = jQuery('<div class="updated wpex-notice"><p>Sorry, the free version of WP Title Experiments is limited to 2 titles. <a href="/wp-admin/plugins.php?page=wp-experiments-free/wp-experiments.php-license">Upgrade your license</a> to test as many titles as you like!</p></div>');
 			alert.insertAfter(jQuery("#wpbody .wrap>h2:first"));
 			return;
 		}
