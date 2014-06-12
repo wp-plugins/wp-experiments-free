@@ -26,9 +26,9 @@ class WPEx {
 		add_action('admin_enqueue_scripts',array($this,'enqueue'));
 
 		add_filter( 'the_title', array($this,'titles'), 10, 2 );
-		if($wpph->check_license()) {
-			add_action('admin_head', array($this, 'premium'));
-		}
+		// if($wpph->check_license()) {
+		// 	add_action('admin_head', array($this, 'premium'));
+		// }
 	}
 	
 	function premium() {
