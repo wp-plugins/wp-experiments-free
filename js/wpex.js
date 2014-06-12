@@ -13,6 +13,8 @@
 			}
 		}
 
+		_wp_title_limit = typeof _wp_title_limit == "undefined" ? 2 : _wp_title_limit;
+
 		$("<h4 id='wpex-title-add'><a href='#''>+ Add New Title</a></h4>").prependTo("#edit-slug-box");
 
 		$("[name=post_title]").change(function() {
@@ -165,6 +167,12 @@
 	};
 
 	wpexTitleAdd = function(ev){
+		if(jQuery(".wpex-title-exp").length >= _wp_title_limit) {
+			jQuery(".wpex-notice").remove();
+			var alert = jQuery('<div class="updated wpex-notice"><p>Sorry, the free version of WP Title Experiments is limited to 2 titles. <a href="#">Upgrade your license</a> to test as many titles as you like!</p></div>');
+			alert.insertAfter(jQuery("#wpbody .wrap>h2:first"));
+			return;
+		}
 		// We are adding one for the first time for this post so setup the orginal title
 		if(!$("#title").hasClass("wpex-title-exp")) {
 			wpexSetupInput({id:null,stats_str:"0,0,0,0,0,0,0",title:"__WPEX_MAIN__",clicks:0,impressions:0,enabled:1});

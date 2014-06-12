@@ -1,13 +1,13 @@
 <?php
 /**
- * This is the main class for WP Experiemnts
+ * This is the main class for Title Experiemnts
  */
 
 class WPEx {
 	private $titles_tbl;
 
 	function __construct() {
-		global $wpdb;
+		global $wpdb, $wpph;
 
 		if (!session_id()) session_start();
 
@@ -26,8 +26,15 @@ class WPEx {
 		add_action('admin_enqueue_scripts',array($this,'enqueue'));
 
 		add_filter( 'the_title', array($this,'titles'), 10, 2 );
+		if($wpph->check_license()) {
+			add_action('admin_head', array($this, 'premium'));
+		}
 	}
 	
+	function premium() {
+		echo "<script type='text/javascript'> window._wp_title_limit = 9999; </script>";
+	}
+
 	function get($what,$post_id) {
 		$d = isset($_SESSION['wpex_data']) ? unserialize(base64_decode($_SESSION['wpex_data'])) : array();
 		if(isset($d[$what.$post_id])) {
