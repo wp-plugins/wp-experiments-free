@@ -6,8 +6,8 @@
 class WPEx {
 	private $titles_tbl;
 
-	function __construct() {
-		global $wpdb, $wpph;
+	function __construct($wpph) {
+		global $wpdb;
 
 		if (!session_id()) session_start();
 
@@ -26,9 +26,9 @@ class WPEx {
 		add_action('admin_enqueue_scripts',array($this,'enqueue'));
 
 		add_filter( 'the_title', array($this,'titles'), 10, 2 );
-		// if($wpph->check_license()) {
-		// 	add_action('admin_head', array($this, 'premium'));
-		// }
+		if($wpph->check_license()) {
+			add_action('admin_head', array($this, 'premium'));
+		}
 	}
 	
 	function premium() {
@@ -446,6 +446,4 @@ class WPEx {
 
 
 }
-
-new WPEx;
 ?>
