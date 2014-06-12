@@ -29,7 +29,7 @@ $wpph = new WPPH(
 
 include('user-agents.php');
 include('wpex.class.php');
-
+new WPEx($wpph);
 register_activation_hook( __FILE__, 'wpex_install' );
 
 function wpex_install() {

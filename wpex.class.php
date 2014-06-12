@@ -6,8 +6,8 @@
 class WPEx {
 	private $titles_tbl;
 
-	function __construct() {
-		global $wpdb, $wpph;
+	function __construct($wpph) {
+		global $wpdb;
 
 		if (!session_id()) session_start();
 
@@ -446,6 +446,4 @@ class WPEx {
 
 
 }
-
-new WPEx;
 ?>
