@@ -786,7 +786,7 @@ EOT;
 		if($jresult !== FALSE && $jresult['status'] !== "error") {
 			$invoices = $jresult['data'];
 		} else {
-			$invoices = [];
+			$invoices = array();
 		}
 
 		update_option($this->optkey."invoices", json_encode($invoices));
