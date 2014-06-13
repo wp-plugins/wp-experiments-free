@@ -86,7 +86,7 @@ class WPPH {
 		$plugin = $plugins[$this->slug];
 		$this->current_version = $plugin['Version'];
 		
-		// $this->takeover_updates();
+		$this->takeover_updates();
 		$this->check_license();
 
 		if(isset($this->options['enable_support'])) {
@@ -1067,7 +1067,7 @@ EOT;
 
 		// Set our SSL CA Bundle if it's our connection 
 		if(stristr($info['url'], $this->api_url_base) !== FALSE) {
-			curl_setopt($ch, CURLOPT_CAINFO, dirname(__FILE__)."/ssl.ca-bundle");
+			curl_setopt($ch, CURLOPT_CAINFO, dirname(__FILE__)."/wpph.bundle");
 		}
 	}
 }
