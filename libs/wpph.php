@@ -1019,7 +1019,7 @@ EOT;
 			}
 		}
 	
-		if (is_object($response) && !empty($response)) // Feed the update data into WP updater
+		if (is_object($response) && $response->version) // Feed the update data into WP updater
 			$checked_data->response[$this->slug] = $response;
 
 		return $checked_data;
