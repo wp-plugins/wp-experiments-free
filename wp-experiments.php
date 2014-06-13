@@ -22,7 +22,6 @@ $wpph = new WPPH(
 		'license_menu_slug' => 'plugins.php',
 		'license_menu_title' => 'Title Experiments License',
 		'enable_support' => TRUE,
-		'takeover_updates' => FALSE,
 		'support_menu_slug' => 'plugins.php',
 		'support_menu_title' => 'Title Experiments Support',
 	)

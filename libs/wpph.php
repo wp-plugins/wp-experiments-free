@@ -11,6 +11,7 @@ class WPPH {
 	private $license;
 	private $trial;
 	private $trialTimeLeft;
+	private $idstr = NULL;
 	private $lastError = NULL;
 	private $now;
 	private $slug = NULL;
@@ -73,11 +74,18 @@ class WPPH {
 		$this->options = array_merge($this->options, $options);
 		$this->license = get_option($this->optkey."license");
 		$this->now = current_time('timestamp');
+		
 		/* If this is the first time that it's been installed, set our timestamp */
 		if(!get_option($this->optkey.'installed')) {
-			update_option($this->opkey."installed", current_time('timestamp'));
+			update_option($this->optkey."installed", current_time('timestamp'));
 		}
-		
+
+		/* If this is the first time that it's been installed, set our idstr */
+		if(!get_option($this->optkey.'idstr')) {
+			update_option($this->optkey."idstr", uniqid(substr($slug,0,10)));
+		}
+		$this->idstr = get_option($this->optkey.'idstr');
+
 		// Get the current version
 		if(!function_exists('get_plugins')) {
 			include(ABSPATH."/wp-admin/includes/plugin.php");
@@ -411,6 +419,7 @@ EOT;
 			//handle the ticket request
 			$request_string = array(
 				'body' => array(
+					"id"=>$this->idstr,
 					"site-url"=>get_site_url(),
 					'api-key' => $this->api_key,
 					"license"=>$this->license,
@@ -447,6 +456,7 @@ EOT;
 		//handle the ticket request
 		$request_string = array(
 			'body' => array(
+				"id"=>$this->idstr,
 				"site-url"=>get_site_url(),
 				'api-key' => $this->api_key,
 				"license"=>$this->license,
@@ -533,6 +543,7 @@ EOT;
 			//handle the ticket request
 			$request_string = array(
 				'body' => array(
+					"id"=>$this->idstr,
 					"site-url"=>get_site_url(),
 					'api-key' => $this->api_key,
 					"version" => $this->current_version,
@@ -653,6 +664,7 @@ EOT;
 		//handle the ticket request
 		$request_string = array(
 			'body' => array(
+				"id"=>$this->idstr,
 				"site-url"=>get_site_url(),
 				'api-key' => $this->api_key,
 				"license"=>$this->license,
@@ -767,6 +779,7 @@ EOT;
 	public function fetch_invoices() {
 		$request_string = array(
 			'body' => array(
+				"id"=>$this->idstr,
 				"site-url"=>get_site_url(),
 				'api-key' => $this->api_key,
 				"current-version" => $this->current_version,
@@ -826,6 +839,7 @@ EOT;
 			$request_string = array(
 				'body' => array(
 					"action"=>"check",
+					"id"=>$this->idstr,
 					"site-url"=>get_site_url(),
 					'api-key' => $this->api_key,
 					"current-version" => $this->current_version,
@@ -982,6 +996,7 @@ EOT;
 		$request_string = array(
 			'body' => array(
 				'action' => 'basic_check', 
+				"id"=>$this->idstr,
 				"site-url"=>get_site_url(),
 				'request' => json_encode($args),
 				'api-key' => $this->api_key,
@@ -1021,7 +1036,8 @@ EOT;
 	
 		$request_string = array(
 			'body' => array(
-				'action' => $action, 
+				'action' => $action,
+				"id"=>$this->idstr,
 				"site-url"=>get_site_url(),
 				'request' => json_encode($args),
 				'api-key' => $this->api_key,
