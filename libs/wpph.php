@@ -86,7 +86,9 @@ class WPPH {
 		$plugin = $plugins[$this->slug];
 		$this->current_version = $plugin['Version'];
 		
-		// $this->takeover_updates();
+		if($this->options['takeover_updates']) {
+			$this->takeover_updates();
+		}
 		$this->check_license();
 
 		if(isset($this->options['enable_support'])) {
@@ -98,7 +100,7 @@ class WPPH {
 		}
 
 		add_action('parse_query', array($this,'iframe_resize_helper'));
-		
+		add_action('http_api_curl', array($this, '__add_ca_bundle' ));
 	}
 
 	public function iframe_resize_helper($wp_query) {
@@ -786,7 +788,7 @@ EOT;
 		if($jresult !== FALSE && $jresult['status'] !== "error") {
 			$invoices = $jresult['data'];
 		} else {
-			$invoices = [];
+			$invoices = array();
 		}
 
 		update_option($this->optkey."invoices", json_encode($invoices));
@@ -959,8 +961,6 @@ EOT;
 		add_filter('plugins_api', array($this, '__plugin_api_call'), 10, 3);
 		// hide from wordpress.org
 		add_filter('http_request_args', array($this, '__filter_parse_arr') , 10, 2);
-		// ensure that we have a valid SSL session	
-		add_action('http_api_curl', array($this, '__add_ca_bundle' ));
 	}
 
 	public function __check_for_updates($checked_data) {
@@ -1067,7 +1067,7 @@ EOT;
 
 		// Set our SSL CA Bundle if it's our connection 
 		if(stristr($info['url'], $this->api_url_base) !== FALSE) {
-			curl_setopt($ch, CURLOPT_CAINFO, dirname(__FILE__)."/ssl.ca-bundle");
+			curl_setopt($ch, CURLOPT_CAINFO, dirname(__FILE__)."/wpph.bundle");
 		}
 	}
 }
