@@ -30,11 +30,16 @@ label.wpex-title-label {
 	padding: 8px 10px;
 }
 
-#wpex-title-add {
+#wpex-title-add, #wpex-title-reset {
 	display: inline;
 	margin-right: 10px;
 	white-space: nowrap;
 }
+#wpex-title-reset {
+	float: right;
+	margin: 0;	
+}
+
 
 .wpex-title-exp-pre.disabled {
 	background-image: url(../img/beaker-gray.png);

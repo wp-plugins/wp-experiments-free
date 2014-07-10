@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: conversions, ab testing, optimization, headlines, split testing, titles, t
 Requires at least: 3.9
 Tested up to: 3.9.1
-Stable tag: 2.4
+Stable tag: 2.5
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -29,17 +29,23 @@ Do you need to test more than just your post titles? Check out WP Experiments Pr
 
 = Do you have a question? =
 
-Check out http://wpexperiments.com for more information.
+Email me at jason@wpexperiments.com.
 
 == Screenshots ==
 
 1. Add multiple titles and see how many people view the article with that title.
 
-
 == Changelog ==
 
+= 2.5 =
+* Code cleanup
+
 = 2.0 =
+<<<<<<< .mine
+* Added License/Support pages to buy premium license
+=======
 * Added License/Support pages to buy support premium support license
+>>>>>>> .r946348
 
 = 1.6 =
 * Fix bug causing fatal error

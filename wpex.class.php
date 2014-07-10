@@ -4,17 +4,19 @@
  */
 
 class WPEx {
-	private $titles_tbl;
-
-	function __construct($wpph) {
+	protected $titles_tbl;
+	private $table_slug;
+	
+	function __construct($slug = "wpex") {
 		global $wpdb;
-
+		$this->table_slug = $slug;
 		if (!session_id()) session_start();
 
 		$_SESSION['wpex_viewed'] = array();
 		$_SESSION['wpex_impressed'] = array();
 
-		$this->titles_tbl = $wpdb->prefix . "wpex_titles";
+		$this->titles_tbl = $wpdb->prefix . $this->table_slug . "_titles";
+		$this->stats_tbl = $wpdb->prefix . $this->table_slug . "_stats";
 		
 		//Initialize
 		add_action('add_meta_boxes',array($this,'add_meta_box'));
@@ -26,8 +28,27 @@ class WPEx {
 		add_action('admin_enqueue_scripts',array($this,'enqueue'));
 
 		add_filter( 'the_title', array($this,'titles'), 10, 2 );
+		add_action( 'wp_ajax_wpex_stat_reset', array($this,'reset_stats'));
+		// add_action( 'wp_dashboard_setup', array($this, 'add_dashboard_widget') );
 	}
+
+	// function add_dashboard_widget() {
+	// 	wp_add_dashboard_widget( 'title_exp_upgrade', __( 'Love Title Experiments Free?' ), array($this, 'upgrade') );
+	// }
 	
+	// function upgrade() {
+	// 	echo "Oh, hello.";
+	// }
+	
+	function reset_stats($data) {
+		global $wpdb;
+		$post_id = $_POST['id'];
+		$sql = "UPDATE " . $this->titles_tbl ." SET clicks=0,impressions=0,stats='' WHERE post_id=".$post_id;
+		$wpdb->query($sql);
+		$sql = "DELETE FROM " . $this->stats_tbl ." WHERE post_id=".$post_id;
+		$wpdb->query($sql);
+	}
+
 	function get($what,$post_id) {
 		$d = isset($_SESSION['wpex_data']) ? unserialize(base64_decode($_SESSION['wpex_data'])) : array();
 		if(isset($d[$what.$post_id])) {
@@ -46,7 +67,6 @@ class WPEx {
 	function viewed($post_id,$title_id)
 	{
 		global $wpdb;
-
 		if($this->is_bot()) return;
 		
 		if(in_array($post_id,$_SESSION['wpex_viewed'])) {
@@ -56,26 +76,36 @@ class WPEx {
 		
 		$result = $wpdb->get_row($sql);
 		if($result) {
-			$time = strtotime("today");
-			$data = unserialize($result->stats);
-			if(!isset($data[$time])) {
-				$data[$time] = 1;
-			} else {
-				$data[$time]++;
-			}
-			$data = serialize($data);
+			mt_srand();
+			// fake the time right now
+			$time = strtotime("midnight");
+			$this->delta_stats($title_id, $post_id, $time, 0, 1);
 			$sql = "UPDATE " . $this->titles_tbl ." SET clicks=clicks+1,stats='$data' WHERE id=".$title_id;
-			
 			$wpdb->query($sql);
 		}
 		$_SESSION['wpex_viewed'][] = $post_id;
+	}
+
+	function delta_stats($title_id, $post_id, $time, $impressions, $clicks) {
+		global $wpdb;
+		//XXX: fake
+		$time = strtotime(mt_rand(0,30)." days ago midnight");
+		if(preg_match("/^\d+$/", $title_id) && preg_match("/^\d+$/", $time) && preg_match("/^\d+$/", $impressions) && preg_match("/^\d+$/", $clicks)) {
+			$sql = "SELECT * FROM " . $this->stats_tbl ." WHERE ts=$time AND title_id=".$title_id;
+			$row = $wpdb->get_row($sql, ARRAY_A);
+			if($row) {
+				$sql = "UPDATE " . $this->stats_tbl ." SET impressions=impressions+$impressions, clicks=clicks+$clicks WHERE ts=$time AND title_id=".$title_id;
+			} else {
+				$sql = "INSERT INTO " . $this->stats_tbl ."(ts, post_id, title_id, impressions, clicks) VALUES($time, $post_id, $title_id, $impressions, $clicks);";
+			}
+			$wpdb->query($sql);	
+		}
 	}
 
 	function titles($title,$id) {
 		global $wpdb;
 
 		if(is_admin()) return $title;
-
 		$title_id = null;
 
 		//Check if a specific post title is in our cookie 
@@ -134,6 +164,8 @@ class WPEx {
 			// If this isn't the post/page and the user hasn't seen this title before, count
 			// it as an impression
 			if(!(is_single($id) || is_page($id)) && !in_array($title_id,$_SESSION['wpex_impressed'])) {
+				$time = strtotime("midnight");
+				$this->delta_stats($result['id'], $id, $time, 1, 0);
 				$sql = "UPDATE " . $this->titles_tbl ." SET impressions=impressions+1 WHERE id=".$result['id'];
 				$wpdb->query($sql);
 

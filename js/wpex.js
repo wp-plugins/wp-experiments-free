@@ -12,13 +12,14 @@
 				wpexSetupInput(trow);
 			}
 		}
-
+		$("<h4 id='wpex-title-reset'><a href='#''>[reset stats]</a></h4>").appendTo("#edit-slug-box");
 		$("<h4 id='wpex-title-add'><a href='#''>+ Add New Title</a></h4>").prependTo("#edit-slug-box");
 
 		$("[name=post_title]").change(function() {
 			$("#orig-post-title").val($(this).val());
 		});
 		$("#wpex-title-add > a").click(wpexTitleAdd);
+		$("#wpex-title-reset > a").click(wpexResetStats);
 	});
 
 	wpexSetupInput = function(trow) {
@@ -162,6 +163,19 @@
 		} else {
 			return "Test case is <b>enabled</b>.<br/><em>Click to disable.</em>";
 		}
+	};
+
+	wpexResetStats = function(ev){
+		var data = {
+			'action': 'wpex_stat_reset',
+			'id': $("#post_ID").val()
+		};
+
+		// since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
+		$.post(ajaxurl, data, function(response) {
+			window.location.reload();
+		});
+		return false;
 	};
 
 	wpexTitleAdd = function(ev){

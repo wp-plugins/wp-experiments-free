@@ -588,13 +588,21 @@ EOT;
 					exit();
 				} else {
 					$alert = "Whoops, an error occrred while submitting your ticket.";
+					if($result_obj->status == "vfailed") {
+						foreach ($result_obj->errors as $field => $str) {
+							$alert .= "<br/><b>".$str."</b>";	
+						}
+						foreach ($result_obj->warnings as $field => $str) {
+							$alert .= "<br/><b>".$str."</b>";	
+						}
+					}
 				}
 			}
 
 			$user_name = $_POST['ticket']['name'];
 			$user_email = $_POST['ticket']['email'];
-			$subject = addslashes($_POST['ticket']['subject']);
-			$message = htmlentities($_POST['ticket']['message']);
+			$subject = stripslashes($_POST['ticket']['subject']);
+			$message = stripslashes(htmlentities($_POST['ticket']['message']));
 			$inc_details = isset($_POST['ticket']["details"]) ? 'checked' : '';
 		} else {
 			$user = wp_get_current_user();
