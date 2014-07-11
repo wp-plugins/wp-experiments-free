@@ -116,14 +116,15 @@ class WPEx {
 	function ajax_titles() {
 		$titles = array();
 		if(isset($_POST['id'])) {
+			$cur_page = isset($_POST['cur_id']) ? $_POST['cur_id'] : NULL;
 			foreach ($_POST['id'] as $id) {
-				$titles[$id] = $this->titles("", $id, true);
+				$titles[$id] = $this->titles("", $id, true, $id == $cur_page);
 			}
 			echo json_encode($titles); die();	
 		}
 	}
 
-	function titles($title, $id, $ajax = false) {
+	function titles($title, $id, $ajax = false, $viewed = false) {
 		global $wpdb;
 		if(!$ajax && is_admin()) return $title;
 		$title_id = null;
@@ -185,7 +186,7 @@ class WPEx {
 
 			// If this isn't the post/page and the user hasn't seen this title before, count
 			// it as an impression
-			if(!(is_single($id) || is_page($id)) && !in_array($title_id,$_SESSION['wpex_impressed'])) {
+			if(!($viewed || is_single($id) || is_page($id)) && !in_array($title_id,$_SESSION['wpex_impressed'])) {
 				$time = strtotime("midnight");
 				$this->delta_stats($result['id'], $id, $time, 1, 0);
 				$sql = "UPDATE " . $this->titles_tbl ." SET impressions=impressions+1 WHERE id=".$result['id'];
@@ -193,14 +194,14 @@ class WPEx {
 
 				$_SESSION['wpex_impressed'][] = $title_id;
 			}
-			
+
 			$this->set("title",$id,$result['id']);
 		}
 
 		// If this is the page/post and we found the title from 
 		// the user's session, that means they saw the title elsewhere
 		// and are now viewing the page - count it as a view
-		if($from_cookie && (is_single($id) || is_page($id))) {
+		if($from_cookie && ($viewed || is_single($id) || is_page($id))) {
 			$this->viewed($id,$title_id);	
 		} 
 		return stripslashes($title);

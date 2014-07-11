@@ -10,9 +10,16 @@
 			});
 			if(find) {
 				$("body").hide();
+				var id_class = document.body.className.match(/\bpostid-(\d+)\b/);
+				if(id_class) {
+					cur_id = id_class[1];
+				} else {
+					cur_id = -1;
+				}
 				$.post(wpex.ajaxurl, {
 					action: 'wpex_titles',
-					id: Object.keys(fetch)
+					id: Object.keys(fetch),
+					cur_id: cur_id
 				}, function(res) {
 					for(var id in res) {
 						var $elm = $("[data-wpex-title-id="+id+"]");
