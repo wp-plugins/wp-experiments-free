@@ -20,6 +20,10 @@ class WPEx {
 		
 		//Initialize
 		add_action('add_meta_boxes',array($this,'add_meta_box'));
+		if(get_option("wpex_use_js", false)) {
+			add_action('wp_enqueue_scripts',array($this,'enqueue'));
+		}
+		add_action('admin_enqueue_scripts',array($this,'admin_enqueue'));
 		
 		//Save the blocks
 		add_action('save_post',array($this,'save_blocks'));
@@ -29,17 +33,26 @@ class WPEx {
 
 		add_filter( 'the_title', array($this,'titles'), 10, 2 );
 		add_action( 'wp_ajax_wpex_stat_reset', array($this,'reset_stats'));
-		// add_action( 'wp_dashboard_setup', array($this, 'add_dashboard_widget') );
+		add_action( 'wp_ajax_wpex_titles', array($this,'ajax_titles'));
+		add_action( 'wp_ajax_nopriv_wpex_titles', array($this,'ajax_titles'));
+		
+		add_action( 'admin_menu', array($this,'settings_menu'));
 	}
 
-	// function add_dashboard_widget() {
-	// 	wp_add_dashboard_widget( 'title_exp_upgrade', __( 'Love Title Experiments Free?' ), array($this, 'upgrade') );
-	// }
-	
-	// function upgrade() {
-	// 	echo "Oh, hello.";
-	// }
-	
+	function settings_menu() {
+		add_submenu_page('options-general.php', 'Title Exp Settings', 'Title Exp Settings', 'edit_posts', "wpexpro-settings", array($this,"general_settings") );
+	}
+
+	// The general settings page
+	function general_settings() {
+		if(isset($_REQUEST['save'])) {
+			update_option("wpex_use_js", $_REQUEST['use_js']);
+		}
+		
+		$use_js = get_option("wpex_use_js", FALSE);
+		include 'wpex-general-settings.php';
+	}
+
 	function reset_stats($data) {
 		global $wpdb;
 		$post_id = $_POST['id'];
@@ -88,8 +101,6 @@ class WPEx {
 
 	function delta_stats($title_id, $post_id, $time, $impressions, $clicks) {
 		global $wpdb;
-		//XXX: fake
-		$time = strtotime(mt_rand(0,30)." days ago midnight");
 		if(preg_match("/^\d+$/", $title_id) && preg_match("/^\d+$/", $time) && preg_match("/^\d+$/", $impressions) && preg_match("/^\d+$/", $clicks)) {
 			$sql = "SELECT * FROM " . $this->stats_tbl ." WHERE ts=$time AND title_id=".$title_id;
 			$row = $wpdb->get_row($sql, ARRAY_A);
@@ -102,16 +113,27 @@ class WPEx {
 		}
 	}
 
-	function titles($title,$id) {
-		global $wpdb;
+	function ajax_titles() {
+		$titles = array();
+		if(isset($_POST['id'])) {
+			foreach ($_POST['id'] as $id) {
+				$titles[$id] = $this->titles("", $id, true);
+			}
+			echo json_encode($titles); die();	
+		}
+	}
 
-		if(is_admin()) return $title;
+	function titles($title, $id, $ajax = false) {
+		global $wpdb;
+		if(!$ajax && is_admin()) return $title;
 		$title_id = null;
+		if(!$ajax && get_option("wpex_use_js", false)) {
+			return "<span style='min-height: 1em; display: inline-block;' data-wpex-title-id='$id' data-original='".base64_encode($title)."'></span>";
+		}
 
 		//Check if a specific post title is in our cookie 
 		$result = $this->get("title",$id);
 		$from_cookie = false;
-
 		if($result) {
 			$sql = "SELECT id,title FROM " . $this->titles_tbl . " WHERE enabled AND id=".$result;
 			$result = $wpdb->get_row($sql, ARRAY_A);
@@ -186,6 +208,17 @@ class WPEx {
 
 
 	function enqueue() {
+		// Register the script first.
+		wp_register_script( 'wpextitles', plugins_url('/js/titles.js',__FILE__), array("jquery"), "0.0.1");
+
+		// Now we can localize the script with our data.
+		$data = array('ajaxurl' => admin_url( 'admin-ajax.php' ));
+		wp_localize_script( 'wpextitles', 'wpex', $data );
+		// The script can be enqueued now or later.
+		wp_enqueue_script( 'wpextitles');
+	}
+
+	function admin_enqueue() {
 		wp_enqueue_style('wpexcss', plugins_url('css/wpex.css',__FILE__));
 		wp_enqueue_script('wpexjs', plugins_url('js/wpex.js',__FILE__), array('jquery'), "0.0.1");
 		wp_enqueue_script('jquery.sparkline.min.js', plugins_url('js/jquery.sparkline.min.js',__FILE__), array('jquery'), "0.0.1");
@@ -228,7 +261,16 @@ class WPEx {
 		foreach($results as $idx=>&$test) {
 			$this->statChecking = $idx;
 			$test['probability'] = round($this->simpsonsrule() * 100);
-			$data = $this->get_sl_data($test['stats']);
+			$sql = "SELECT * FROM ".$this->stats_tbl." WHERE title_id=".$test['id'];
+			$stat_results = $wpdb->get_results($sql, ARRAY_A);
+			$stats = array();
+			foreach($stat_results as $s) {
+				$stats[$s['ts']] = array(
+					'clicks' => $s['clicks'],
+					'impressions' => $s['impressions']
+				);
+			}
+			$data = $this->get_sl_data($stats);
 			$test['stats_str'] = join(",",$data);
 			$test['title'] = stripslashes($test['title']);
 		}
@@ -256,7 +298,6 @@ class WPEx {
 	**/
 	function get_sl_data($data) {
 		$arr = array(0,0,0,0,0,0,0);
-		$data = unserialize($data);
 		if(!is_array($data)) {
 			return $arr;
 		}
@@ -264,7 +305,7 @@ class WPEx {
 		$today = strtotime("today");
 		for($i=0;$i<7;$i++) {
 			$d = $today-(24*60*60*$i);
-			$arr[$i] = isset($data[$d]) ? $data[$d] : 0;
+			$arr[$i] = isset($data[$d]) ? $data[$d]['clicks'] : 0;
 		}
 		return array_reverse($arr);
 	}
