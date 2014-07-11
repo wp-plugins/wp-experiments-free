@@ -9,7 +9,6 @@
 				find = 1;
 			});
 			if(find) {
-				$("body").hide();
 				var id_class = document.body.className.match(/\bpostid-(\d+)\b/);
 				if(id_class) {
 					cur_id = id_class[1];
@@ -29,7 +28,6 @@
 							$("[data-wpex-title-id="+id+"]").html(res[id]);
 						}
 					}
-					$("body").show();
 				}, 'json');
 			}
 		} catch(err) {
