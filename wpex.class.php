@@ -40,7 +40,7 @@ class WPEx {
 	}
 
 	function settings_menu() {
-		add_submenu_page('options-general.php', 'Title Exp Settings', 'Title Exp Settings', 'edit_posts', "wpexpro-settings", array($this,"general_settings") );
+		add_submenu_page('options-general.php', 'Title Exp Settings', 'Title Exp Settings', 'edit_posts', "wpex-settings", array($this,"general_settings") );
 	}
 
 	// The general settings page
@@ -379,19 +379,19 @@ class WPEx {
 	function is_bot() {
 		global $_ROBOT_USER_AGENTS;
 		
-		if(isset($_SESSION['wpexpro_is_bot'])) {
-			return $_SESSION['wpexpro_is_bot'];
+		if(isset($_SESSION['wpex_is_bot'])) {
+			return $_SESSION['wpex_is_bot'];
 		}
 
 		$ua = $_SERVER['HTTP_USER_AGENT'];
 		foreach($_ROBOT_USER_AGENTS as $agent) {
 			if(preg_match("/".$agent."/i", $ua)) {
-				$_SESSION['wpexpro_is_bot'] = TRUE;
+				$_SESSION['wpex_is_bot'] = TRUE;
 				return TRUE;
 			}
 		}
 
-		$_SESSION['wpexpro_is_bot'] = FALSE;
+		$_SESSION['wpex_is_bot'] = FALSE;
 		return FALSE;
 	}
 	
