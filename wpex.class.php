@@ -47,9 +47,11 @@ class WPEx {
 	function general_settings() {
 		if(isset($_REQUEST['save'])) {
 			update_option("wpex_use_js", $_REQUEST['use_js']);
+			update_option("wpex_best_feed", $_REQUEST['best_feed']);
 		}
 		
 		$use_js = get_option("wpex_use_js", FALSE);
+		$best_feed = get_option("wpex_best_feed", FALSE);
 		include 'wpex-general-settings.php';
 	}
 
@@ -127,6 +129,34 @@ class WPEx {
 	function titles($title, $id, $ajax = false, $viewed = false) {
 		global $wpdb;
 		if(!$ajax && is_admin()) return $title;
+		
+		$sql = "SELECT id,title,impressions,clicks FROM " . $this->titles_tbl . " WHERE enabled AND post_id=".$id;
+		$titles_result = $wpdb->get_results($sql, ARRAY_A);
+		
+		if(count($titles_result) === 0) {
+			//No titles are here
+			return $title;
+		}
+
+		//If this is a feed - no funny business
+		if(is_feed()) {
+			//use the best title based on click percent
+			if(get_option("wpex_best_feed", false)) {
+				$max = array(-1, NULL);
+				foreach($titles_result as $t) {
+					$_max = $t['clicks'] / ($t['impressions'] == 0 ? 1 : $t['impressions']);
+					if($_max > $max[0]) {
+						$max = array($_max, $t['title']);
+					}
+				}
+				if($max === NULL) return $title; //give up
+				return stripslashes($max[1]);
+			} else {
+				//use the standard title
+				return $title;
+			}
+		}
+
 		$title_id = null;
 		if(!$ajax && get_option("wpex_use_js", false)) {
 			return "<span style='min-height: 1em; display: inline-block;' data-wpex-title-id='$id' data-original='".base64_encode($title)."'></span>";
@@ -153,21 +183,20 @@ class WPEx {
 		if(count($result) > 1) {
 			//Use a beta distribution random number to determine which 
 			//test to show. Based on:
-			// http://www.quora.com/In-A-B-Testing-how-many-conversions-do-you-need-per-variation-for-the-results-to-be-significant
+			// http://camdp.com/blogs/multi-armed-bandits
 			require_once dirname(__FILE__).'/libs/PDL/BetaDistribution.php';
 			mt_srand();
 			$max = 0;
 			foreach($result as $t) {
-				// Seed with a 1/2 = 50% probability
-				$i = $t['impressions'] <= 1 ? 2 : $t['impressions'];
-				$c = $t['clicks'] <= 1 ? 1 : $t['clicks'];
+				$i = (0.5) * $t['impressions'];
+				$c = (0.5) * $t['clicks'];
 
-				// Always ensure we $i & $c are > 0
-				if($i-$c <= 0) {
-					$i = $c + 1;
-				}
+				// // Always ensure that $i >  & $c are > 0
+				// if($i-$c <= 0) {
+				// 	$i = $c + 1;
+				// }
 
-				$bd= new BetaDistribution($c,$i-$c);
+				$bd= new BetaDistribution(1+$c,1+$i-$c);
 				$r = $bd->_getRNG();
 				if($r > $max) {
 					$test = $t;
@@ -510,7 +539,5 @@ class WPEx {
 				return('$n has to be an even number');
 		 }
 	}
-
-
 }
 ?>

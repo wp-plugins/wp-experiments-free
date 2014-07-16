@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: conversions, ab testing, optimization, headlines, split testing, titles, t
 Requires at least: 3.9
 Tested up to: 3.9.1
-Stable tag: 2.9
+Stable tag: 3.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -37,15 +37,14 @@ Email me at jason@wpexperiments.com.
 
 == Changelog ==
 
+= 3.0 =
+* Fix rss feed generation and ajax call
+
+= 2.8 =
+* Add javascript cache avoidance
+
 = 2.5 =
 * Code cleanup
-
-= 2.0 =
-<<<<<<< .mine
-* Added License/Support pages to buy premium license
-=======
-* Added License/Support pages to buy support premium support license
->>>>>>> .r946348
 
 = 1.6 =
 * Fix bug causing fatal error

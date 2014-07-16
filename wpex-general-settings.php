@@ -12,6 +12,13 @@
 						<p class="description">Use JavaScript to set the titles. Use this if your site uses heavy caching.</p>
 					</td>
 				</tr>
+				<tr valign="top">
+					<th scope="row"><label for="blogname">Best title in feed</label></th>
+					<td>
+						<input name="best_feed" type="checkbox" value="1" <?php if($best_feed): ?>checked<?php endif; ?>> Use the best performing title in feeds
+						<p class="description">Use the best performing title in feeds instead of the default title.</p>
+					</td>
+				</tr>
 				<tr>
 					<th></th>
 					<td><input type="submit" class="button-primary" name="save" value="Save Settings" /></td>
