@@ -19,6 +19,8 @@ Test your titles and discover what your readers find interesting. Get more click
 
 Use the process of A/B Testing to try different variations of your post titles to get a higher click through rate. It's very simple to add multiple versions of an article title that will be randomly displayed in any post list. Each time the article is listed it is counted as an impression. Each time the article is visited it is counted as a view. This will easily let you see what percentage of impressions get clicked on for each title.
 
+For more information, check out https://wpexperiments.com/title-experiments/.
+
 Do you need to test more than just your post titles? Check out WP Experiments Pro at http://wpexperiments.com for even more advanced content testing.
 
 == Installation ==
@@ -27,9 +29,7 @@ Do you need to test more than just your post titles? Check out WP Experiments Pr
 
 == Frequently Asked Questions ==
 
-= Do you have a question? =
-
-Email me at jason@wpexperiments.com.
+Check out https://wpexperiments.com/title-experiments/
 
 == Screenshots ==
 
