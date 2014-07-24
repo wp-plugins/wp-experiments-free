@@ -5,21 +5,20 @@
 	Description: A/B test the titles of your pages and posts to get the most page views. More info: http://wpexperiments.com
 	Author: Jason Funk
 	Author URI: http://jasonfunk.net
-	Version: 3.1
+	Version: 3.2
 	License: GPLv3
 */
 
 global $wpex_db_version;
-$wpex_db_version = "0.0.2";
+$wpex_db_version = "0.3";
 
 include('user-agents.php');
 include('wpex.class.php');
 new WPEx();
-register_activation_hook( __FILE__, 'wpex_install' );
 
-function wpex_install() {
+$cur_db_version = get_option("wpex_db_version");
+if($cur_db_version != $wpex_db_version) {
 	global $wpdb;
-	global $wpex_db_version;
 
 	$table_name = $wpdb->prefix . "wpex_titles";
 	     
@@ -30,6 +29,8 @@ function wpex_install() {
 		enabled tinyint NOT NULL default 1,
 		impressions  int unsigned default 0,
 		clicks  int unsigned default 0,
+		probability int unsigned default 0,
+		last_updated int unsigned default 0,
 		stats text NOT NULL,
 		UNIQUE KEY id (id)
 	);";
@@ -49,7 +50,7 @@ function wpex_install() {
 	);";
 	dbDelta( $sql );
 
-	add_option( "wpex_db_version", $wpex_db_version );
+	update_option( "wpex_db_version", $wpex_db_version );
 }
 
 ?>

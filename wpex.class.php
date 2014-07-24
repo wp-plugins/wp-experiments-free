@@ -6,6 +6,7 @@
 class WPEx {
 	protected $titles_tbl;
 	private $table_slug;
+	private $now;
 	
 	function __construct($slug = "wpex") {
 		global $wpdb;
@@ -37,6 +38,7 @@ class WPEx {
 		add_action( 'wp_ajax_nopriv_wpex_titles', array($this,'ajax_titles'));
 		
 		add_action( 'admin_menu', array($this,'settings_menu'));
+		$this->now = current_time("timestamp");
 	}
 
 	function settings_menu() {
@@ -48,10 +50,12 @@ class WPEx {
 		if(isset($_REQUEST['save'])) {
 			update_option("wpex_use_js", $_REQUEST['use_js']);
 			update_option("wpex_best_feed", $_REQUEST['best_feed']);
+			update_option("wpex_adjust_every", $_REQUEST['adjust_every']);
 		}
 		
 		$use_js = get_option("wpex_use_js", FALSE);
 		$best_feed = get_option("wpex_best_feed", FALSE);
+		$adjust_every = get_option("wpex_adjust_every", 300);
 		include 'wpex-general-settings.php';
 	}
 
@@ -130,7 +134,7 @@ class WPEx {
 		global $wpdb;
 		if(!$ajax && is_admin()) return $title;
 		
-		$sql = "SELECT id,title,impressions,clicks FROM " . $this->titles_tbl . " WHERE enabled AND post_id=".$id;
+		$sql = "SELECT id,title,impressions,clicks,probability,last_updated FROM " . $this->titles_tbl . " WHERE enabled AND post_id=".$id;
 		$titles_result = $wpdb->get_results($sql, ARRAY_A);
 		
 		if(count($titles_result) === 0) {
@@ -175,40 +179,55 @@ class WPEx {
 		}
 
 		if(!$result) {
-			$sql = "SELECT id,title,impressions,clicks FROM " . $this->titles_tbl . " WHERE enabled AND post_id=".$id;
+			$sql = "SELECT id,title,impressions,clicks,probability,last_updated FROM " . $this->titles_tbl . " WHERE enabled AND post_id=".$id;
 			$result = $wpdb->get_results($sql, ARRAY_A);
 		}
 
-
+		$startTime = microtime(true);
 		if(count($result) > 1) {
-			//Use a beta distribution random number to determine which 
-			//test to show. Based on:
-			// http://camdp.com/blogs/multi-armed-bandits
-			require_once dirname(__FILE__).'/libs/PDL/BetaDistribution.php';
-			mt_srand();
-			$max = 0;
-			foreach($result as $t) {
-				$i = (0.5) * $t['impressions'];
-				$c = (0.5) * $t['clicks'];
+			//check if we need to regen the probabilities
+			$adjust_every = get_option("wpex_adjust_every", 300);
 
-				// // Always ensure that $i >  & $c are > 0
-				// if($i-$c <= 0) {
-				// 	$i = $c + 1;
-				// }
+			if($result[0]['last_updated'] + $adjust_every < $this->now) {
+				//Use a beta distribution random number to determine which 
+				//test to show. Based on:
+				// http://camdp.com/blogs/multi-armed-bandits
+				require_once dirname(__FILE__).'/libs/PDL/BetaDistribution.php';
+				mt_srand();
+				$max = 0;
+				foreach($result as &$t) {
+					$i = (0.5) * $t['impressions'];
+					$c = (0.5) * $t['clicks'];
+					$t['bd']= new BetaDistribution(1+$c,1+$i-$c);
+				}
 
-				$bd= new BetaDistribution(1+$c,1+$i-$c);
-				$r = $bd->_getRNG();
-				if($r > $max) {
-					$test = $t;
-					$max = $r;
+				$this->statTests = $result;
+				foreach($result as $idx=>&$test) {
+					$this->statChecking = $idx;
+					$test['probability'] = round($this->simpsonsrule() * 100);
+					$sql = "UPDATE " . $this->titles_tbl ." SET probability=".$test['probability'].", last_updated=".$this->now." WHERE id=".$test['id'];
+					$wpdb->query($sql);
 				}
 			}
 
-			$result = $test;
+			// We pick a random number and then loop
+			// through our tests and check if the number is
+			// less than the sum of all the previous probabilties
+			// that we've checked so far. It works - test it. :)
+			mt_srand();
+			$rand = mt_rand(0,100);
+			$total = 0;
+			foreach($result as $t) {
+				if($rand < ($total + $t['probability'])) {
+					break;
+				}
+				$total += $t['probability'];
+			}
+			$result = $t;
 		} elseif(count($result) == 1) {
 			$result = $result[0];
 		}
-		
+
 		if($result) {
 			$title_id = $result['id'];
 			$title = $result['title'] == "__WPEX_MAIN__" ? $title : $result['title'];
@@ -235,7 +254,6 @@ class WPEx {
 		} 
 		return stripslashes($title);
 	}
-
 
 	function enqueue() {
 		// Register the script first.
@@ -279,12 +297,11 @@ class WPEx {
 		require_once dirname(__FILE__).'/libs/PDL/BetaDistribution.php';
 			
 		foreach($results as &$test) {
-			$c = $test['clicks'] > 1 ? $test['clicks'] : 1;
-			$i = $test['impressions'] > 1 ? $test['impressions'] : 2;
+			$i = (0.5) * $test['impressions'];
+			$c = (0.5) * $test['clicks'];
 
-			if($i-$c <= 0) ($i = $c+1);
 
-			$test['bd'] = new BetaDistribution($c,$i-$c);
+			$test['bd']= new BetaDistribution(1+$c,1+$i-$c);
 		}
 		
 		$this->statTests = $results;
