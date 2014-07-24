@@ -304,10 +304,7 @@ class WPEx {
 			$test['bd']= new BetaDistribution(1+$c,1+$i-$c);
 		}
 		
-		$this->statTests = $results;
 		foreach($results as $idx=>&$test) {
-			$this->statChecking = $idx;
-			$test['probability'] = round($this->simpsonsrule() * 100);
 			$sql = "SELECT * FROM ".$this->stats_tbl." WHERE title_id=".$test['id'];
 			$stat_results = $wpdb->get_results($sql, ARRAY_A);
 			$stats = array();
