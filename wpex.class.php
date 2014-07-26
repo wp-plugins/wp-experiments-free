@@ -130,8 +130,9 @@ class WPEx {
 		}
 	}
 
-	function titles($title, $id, $ajax = false, $viewed = false) {
+	function titles($title, $id=NULL, $ajax = false, $viewed = false) {
 		global $wpdb;
+		if($id == NULL) return $title;
 		if(!$ajax && is_admin()) return $title;
 		
 		$sql = "SELECT id,title,impressions,clicks,probability,last_updated FROM " . $this->titles_tbl . " WHERE enabled AND post_id=".$id;
