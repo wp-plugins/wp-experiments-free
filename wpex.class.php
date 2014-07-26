@@ -198,7 +198,7 @@ class WPEx {
 				foreach($result as &$t) {
 					$i = (0.5) * $t['impressions'];
 					$c = (0.5) * $t['clicks'];
-					$t['bd']= new BetaDistribution(1+$c,1+$i-$c);
+					$t['bd']= new BetaDistribution(1+$c,1+max(0, $i-$c));
 				}
 
 				$this->statTests = $result;
@@ -301,7 +301,7 @@ class WPEx {
 			$c = (0.5) * $test['clicks'];
 
 
-			$test['bd']= new BetaDistribution(1+$c,1+$i-$c);
+			$test['bd']= new BetaDistribution(1+$c,1+max(0, $i-$c));
 		}
 		
 		foreach($results as $idx=>&$test) {
