@@ -285,8 +285,7 @@ class WPEx {
 	/**
 	 * Show meta box
 	 */
-	function meta_box() {
-		global $post;
+	function meta_box($post, $box, $reload = FALSE) {
 		global $wpdb;
 
 		$sql = "SELECT * FROM ".$this->titles_tbl." WHERE enabled AND post_id=".$post->ID;
@@ -294,16 +293,13 @@ class WPEx {
 
 		$so_title = str_replace("'", "\\'", $post->post_title);
 
-		require_once dirname(__FILE__).'/libs/PDL/BetaDistribution.php';
-			
-		foreach($results as &$test) {
-			$i = (0.5) * $test['impressions'];
-			$c = (0.5) * $test['clicks'];
+		$adjust_every = get_option("wpex_adjust_every", 300);
 
-
-			$test['bd']= new BetaDistribution(1+$c,1+max(0, $i-$c));
+		if(!$reload && (($results[0]['last_updated'] + $adjust_every) < $this->now)) {
+			//we need to fetch the titles
+			$this->titles($post->post_title, $post->ID, true);
+			return $this->meta_box($post, $box, true);
 		}
-		
 		foreach($results as $idx=>&$test) {
 			$sql = "SELECT * FROM ".$this->stats_tbl." WHERE title_id=".$test['id'];
 			$stat_results = $wpdb->get_results($sql, ARRAY_A);
