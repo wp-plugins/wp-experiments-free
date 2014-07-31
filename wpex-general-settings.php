@@ -34,6 +34,17 @@
 						<p class="description">Recalculate title display probabilities every so often. Doing it too often can slow down high traffic sites.</p>
 					</td>
 				</tr>
+				<?php if($titleEx): ?>
+					<?php echo $titleEx->settings(); ?>
+				<?php else: ?>
+					<tr valign="top">
+					<th scope="row"><label for="best_feed">Want more?</label></th>
+					<td>
+						<p class="description"><b>Do you want to get more out of your Title Experiments?</b><br/>
+						 If so, check out <a target="_blank" href="https://wpexperiments.com/title-experiments-pro/">Title Experiments Pro</a>. You can get more detailed statistics, embedded priority support, and more!.</p>
+					</td>
+				</tr>
+				<?php endif; ?>
 				<tr>
 					<th></th>
 					<td><input type="submit" class="button-primary" name="save" value="Save Settings" /></td>

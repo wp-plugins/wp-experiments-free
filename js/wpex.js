@@ -12,6 +12,11 @@
 				wpexSetupInput(trow);
 			}
 		}
+		
+		if(_wpex_pro_nag) {
+			$('<div class="updated nag below-h2"><p>Want more detailed statistics from your title experiments? Check out <a target="_blank" href="http://wpexperiments.com/title-experiments-pro">Title Experiments Pro.</a></p></div>').insertAfter("div.wrap>h2:first");
+		}
+
 		$("<h4 id='wpex-title-reset'><a href='#''>[reset stats]</a></h4>").appendTo("#edit-slug-box");
 		$("<h4 id='wpex-title-add'><a href='#''>+ Add New Title</a></h4>").prependTo("#edit-slug-box");
 

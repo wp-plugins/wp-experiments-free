@@ -4,7 +4,8 @@
  */
 
 class WPEx {
-	protected $titles_tbl;
+	public $titles_tbl;
+	public $stats_tbl;
 	private $table_slug;
 	private $now;
 	
@@ -39,6 +40,43 @@ class WPEx {
 		
 		add_action( 'admin_menu', array($this,'settings_menu'));
 		$this->now = current_time("timestamp");
+		if(get_option("wpex_installed", FALSE) === FALSE) {
+			update_option("wpex_installed", $this->now);
+		}
+
+		add_action('wp_dashboard_setup', array($this, 'add_nag_widget'));
+	}
+
+	// Function that outputs the contents of the dashboard widget
+	function dashboard_nag_widget($post, $callback_args) {
+		echo "<div style='text-align:center;font-size: 1.3em;'>Are you enjoying your title experiments but wished you had more detail?<br/><br/>Now you can with Title Experiments Pro!<br/>";
+		echo "<br/><b>Detailed Statistics, Priority Support, And More!</b><br/><br/>";
+		echo "<img src='https://wpexperiments.com/wp-content/uploads/2014/07/titlexpro.gif' style='max-width:90%;margin:5px auto;'/>";
+		echo "<a class='button button-primary' href='https://wpexperiments.com/title-experiments-pro/' target='_blank'>Upgrade Today!</a></div>";
+	}
+
+	function add_nag_widget() {
+		$installed = get_option("wpex_installed");
+		// if($this->now - $installed < 3*24*60*60) {
+			wp_add_dashboard_widget('titlex_nag_widget', 'Title Experiments Pro', array($this, 'dashboard_nag_widget'));
+			// Took this code from the SEO Ultimate Plugin. Thanks! :)
+			// Globalize the metaboxes array, this holds all the widgets for wp-admin
+			global $wp_meta_boxes;
+
+			// Get the regular dashboard widgets array 
+			// (which has our new widget already but at the end)
+			$normal_dashboard = $wp_meta_boxes['dashboard']['normal']['core'];
+
+			// Backup and delete our new dashboard widget from the end of the array
+			$widget_backup = array( 'titlex_nag_widget' => $normal_dashboard['titlex_nag_widget'] );
+			unset( $normal_dashboard['titlex_nag_widget'] );
+
+			// Merge the two arrays together so our widget is at the beginning
+			$sorted_dashboard = array_merge($widget_backup, $normal_dashboard );
+
+			// Save the sorted array back into the original metaboxes 
+			$wp_meta_boxes['dashboard']['normal']['core'] = $sorted_dashboard;
+		// }
 	}
 
 	function settings_menu() {
@@ -47,10 +85,14 @@ class WPEx {
 
 	// The general settings page
 	function general_settings() {
+		global $titleEx;
 		if(isset($_REQUEST['save'])) {
 			update_option("wpex_use_js", $_REQUEST['use_js']);
 			update_option("wpex_best_feed", $_REQUEST['best_feed']);
 			update_option("wpex_adjust_every", $_REQUEST['adjust_every']);
+			if($titleEx) {
+				$titleEx->save_settings($_REQUEST);
+			}
 		}
 		
 		$use_js = get_option("wpex_use_js", FALSE);
@@ -327,10 +369,15 @@ class WPEx {
 			$test['title'] = stripslashes($test['title']);
 		}
 
+		$pro_nag = !class_exists("TitleEx") && (get_option("_titlex_last_nag", 0) < (current_time("timestamp") - (12*60*60)));
+		if($pro_nag) {
+			update_option("_titlex_last_nag", current_time("timestamp"));
+		}
 		$rows = array_merge($rows, $results);
 
 		echo "<script type='text/javascript'>";
-		echo "_wpex_data = " . json_encode($rows);
+		echo "_wpex_data = " . json_encode($rows)."\n";
+		echo "_wpex_pro_nag = ".($pro_nag?"true":"false").";";
 		echo "</script>";
 	}
 	
