@@ -12,7 +12,6 @@ class WPEx {
 	function __construct($slug = "wpex") {
 		global $wpdb;
 		$this->table_slug = $slug;
-		if (!session_id()) session_start();
 
 		$_SESSION['wpex_viewed'] = array();
 		$_SESSION['wpex_impressed'] = array();
