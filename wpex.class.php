@@ -6,19 +6,24 @@
 class WPEx {
 	public $titles_tbl;
 	public $stats_tbl;
+	public $session_tbl;
+	public $session;
 	private $table_slug;
 	private $now;
 	
 	function __construct($slug = "wpex") {
 		global $wpdb;
 		$this->table_slug = $slug;
-
-		$_SESSION['wpex_viewed'] = array();
-		$_SESSION['wpex_impressed'] = array();
+		$this->session = WP_Session::get_instance();
+		$this->session['wpex_viewed'] = array();
+		$this->session['wpex_impressed'] = array();
 
 		$this->titles_tbl = $wpdb->prefix . $this->table_slug . "_titles";
 		$this->stats_tbl = $wpdb->prefix . $this->table_slug . "_stats";
-		
+		$this->session_tbl = $wpdb->prefix . $this->table_slug . "_session";
+
+		add_filter( 'wp_session_expiration', function(){ return 7*24*60*60; });
+
 		//Initialize
 		add_action('add_meta_boxes',array($this,'add_meta_box'));
 		if(get_option("wpex_use_js", false)) {
@@ -110,7 +115,7 @@ class WPEx {
 	}
 
 	function get($what,$post_id) {
-		$d = isset($_SESSION['wpex_data']) ? unserialize(base64_decode($_SESSION['wpex_data'])) : array();
+		$d = isset($this->session['wpex_data']) ? unserialize(base64_decode($this->session['wpex_data'])) : array();
 		if(isset($d[$what.$post_id])) {
 			return $d[$what.$post_id];
 		} else {
@@ -119,9 +124,9 @@ class WPEx {
 	}
 
 	function set($what,$post_id,$id) {
-		$d = isset($_SESSION['wpex_data']) ? unserialize(base64_decode($_SESSION['wpex_data'])) : array();
+		$d = isset($this->session['wpex_data']) ? unserialize(base64_decode($this->session['wpex_data'])) : array();
 		$d[$what.$post_id] = $id;
-		$_SESSION["wpex_data"] = base64_encode(serialize($d));
+		$this->session["wpex_data"] = base64_encode(serialize($d));
 	}
 
 	function viewed($post_id,$title_id)
@@ -129,7 +134,7 @@ class WPEx {
 		global $wpdb;
 		if($this->is_bot()) return;
 		
-		if(in_array($post_id,$_SESSION['wpex_viewed'])) {
+		if(in_array($post_id,$this->session['wpex_viewed']->toArray())) {
 			return;
 		}
 		$sql = "SELECT stats FROM " . $this->titles_tbl . " WHERE id=".$title_id;
@@ -143,7 +148,7 @@ class WPEx {
 			$sql = "UPDATE " . $this->titles_tbl ." SET clicks=clicks+1,stats='$data' WHERE id=".$title_id;
 			$wpdb->query($sql);
 		}
-		$_SESSION['wpex_viewed'][] = $post_id;
+		$this->session['wpex_viewed'][] = $post_id;
 	}
 
 	function delta_stats($title_id, $post_id, $time, $impressions, $clicks) {
@@ -276,13 +281,13 @@ class WPEx {
 
 			// If this isn't the post/page and the user hasn't seen this title before, count
 			// it as an impression
-			if(!($viewed || is_single($id) || is_page($id)) && !in_array($title_id,$_SESSION['wpex_impressed'])) {
+			if(!($viewed || is_single($id) || is_page($id)) && !in_array($title_id, $this->session['wpex_impressed']->toArray())) {
 				$time = strtotime("midnight");
 				$this->delta_stats($result['id'], $id, $time, 1, 0);
 				$sql = "UPDATE " . $this->titles_tbl ." SET impressions=impressions+1 WHERE id=".$result['id'];
 				$wpdb->query($sql);
 
-				$_SESSION['wpex_impressed'][] = $title_id;
+				$this->session['wpex_impressed'][] = $title_id;
 			}
 
 			$this->set("title",$id,$result['id']);
@@ -436,19 +441,19 @@ class WPEx {
 	function is_bot() {
 		global $_ROBOT_USER_AGENTS;
 		
-		if(isset($_SESSION['wpex_is_bot'])) {
-			return $_SESSION['wpex_is_bot'];
+		if(isset($this->session['wpex_is_bot'])) {
+			return $this->session['wpex_is_bot'];
 		}
 
 		$ua = $_SERVER['HTTP_USER_AGENT'];
 		foreach($_ROBOT_USER_AGENTS as $agent) {
 			if(preg_match("/".$agent."/i", $ua)) {
-				$_SESSION['wpex_is_bot'] = TRUE;
+				$this->session['wpex_is_bot'] = TRUE;
 				return TRUE;
 			}
 		}
 
-		$_SESSION['wpex_is_bot'] = FALSE;
+		$this->session['wpex_is_bot'] = FALSE;
 		return FALSE;
 	}
 	
