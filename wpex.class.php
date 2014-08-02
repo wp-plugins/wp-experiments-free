@@ -14,9 +14,8 @@ class WPEx {
 	function __construct($slug = "wpex") {
 		global $wpdb;
 		$this->table_slug = $slug;
-		$this->session = WP_Session::get_instance();
-		$this->session['wpex_viewed'] = array();
-		$this->session['wpex_impressed'] = array();
+		
+		add_action( 'init', array($this,'start_session'), 0);
 
 		$this->titles_tbl = $wpdb->prefix . $this->table_slug . "_titles";
 		$this->stats_tbl = $wpdb->prefix . $this->table_slug . "_stats";
@@ -51,6 +50,12 @@ class WPEx {
 		add_action('wp_dashboard_setup', array($this, 'add_nag_widget'));
 	}
 
+	function start_session() {
+		$this->session = WP_Session::get_instance();
+		$this->session['wpex_viewed'] = array();
+		$this->session['wpex_impressed'] = array();
+	}
+	
 	// Function that outputs the contents of the dashboard widget
 	function dashboard_nag_widget($post, $callback_args) {
 		echo "<div style='text-align:center;font-size: 1.3em;'>Are you enjoying your title experiments but wished you had more detail?<br/><br/>Now you can with Title Experiments Pro!<br/>";

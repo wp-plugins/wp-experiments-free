@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: conversions, ab testing, optimization, headlines, split testing, titles, t
 Requires at least: 3.9
 Tested up to: 3.9.1
-Stable tag: 3.9
+Stable tag: 4.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -37,7 +37,7 @@ Check out https://wpexperiments.com/title-experiments/
 
 == Changelog ==
 
-= 3.9 =
+= 3.9, 4.0 =
 * Embed wp-session-manager
 
 = 3.8 =
