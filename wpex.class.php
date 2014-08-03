@@ -21,7 +21,7 @@ class WPEx {
 		$this->stats_tbl = $wpdb->prefix . $this->table_slug . "_stats";
 		$this->session_tbl = $wpdb->prefix . $this->table_slug . "_session";
 
-		add_filter( 'wp_session_expiration', function(){ return 7*24*60*60; });
+		add_filter( 'wp_session_expiration', array($this, "session_expiration"));
 
 		//Initialize
 		add_action('add_meta_boxes',array($this,'add_meta_box'));
@@ -47,7 +47,12 @@ class WPEx {
 			update_option("wpex_installed", $this->now);
 		}
 
+
 		add_action('wp_dashboard_setup', array($this, 'add_nag_widget'));
+	}
+
+	function session_expiration() {
+		return 7*24*60*60;
 	}
 
 	function start_session() {
@@ -65,8 +70,8 @@ class WPEx {
 	}
 
 	function add_nag_widget() {
-		$installed = get_option("wpex_installed");
-		// if($this->now - $installed < 3*24*60*60) {
+		if(!class_exists("TitleEx")) {
+			$installed = get_option("wpex_installed");
 			wp_add_dashboard_widget('titlex_nag_widget', 'Title Experiments Pro', array($this, 'dashboard_nag_widget'));
 			// Took this code from the SEO Ultimate Plugin. Thanks! :)
 			// Globalize the metaboxes array, this holds all the widgets for wp-admin
@@ -85,7 +90,7 @@ class WPEx {
 
 			// Save the sorted array back into the original metaboxes 
 			$wp_meta_boxes['dashboard']['normal']['core'] = $sorted_dashboard;
-		// }
+		}
 	}
 
 	function settings_menu() {
