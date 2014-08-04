@@ -47,7 +47,6 @@ class WPEx {
 			update_option("wpex_installed", $this->now);
 		}
 
-
 		add_action('wp_dashboard_setup', array($this, 'add_nag_widget'));
 	}
 
@@ -421,14 +420,14 @@ class WPEx {
 		global $wpdb;
 
 		if(!wp_is_post_revision($post_id) && !wp_is_post_autosave($post_id) && ((!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || @$_SERVER['HTTP_X_REQUESTED_WITH'] != 'XMLHttpRequest'))) :
-			//Ensure the main title is in the DB
-			$sql = "SELECT COUNT(*) FROM " . $this->titles_tbl . " WHERE post_id=".$post_id." AND title='__WPEX_MAIN__';";
-			$count = $wpdb->get_col($sql);
-			if($count[0] == 0) {
-				$wpdb->insert($this->titles_tbl, array("title"=>"__WPEX_MAIN__","post_id"=>$post_id));
-			}
-
 			if(isset($_POST['wpex-titles'])) {
+				//Ensure the main title is in the DB
+				$sql = "SELECT COUNT(*) FROM " . $this->titles_tbl . " WHERE post_id=".$post_id." AND title='__WPEX_MAIN__';";
+				$count = $wpdb->get_col($sql);
+				if($count[0] == 0) {
+					$wpdb->insert($this->titles_tbl, array("title"=>"__WPEX_MAIN__","post_id"=>$post_id));
+				}
+
 				foreach($_POST['wpex-titles'] as $key=>$val) {
 					$enabled = isset($_POST['wpex-enabled']) && isset($_POST['wpex-enabled'][$key]) ? true : false; 
 					if($key[0] == "_") {
