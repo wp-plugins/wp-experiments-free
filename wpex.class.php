@@ -143,7 +143,7 @@ class WPEx {
 		global $wpdb;
 		if($this->is_bot()) return;
 		
-		if(in_array($post_id,$this->session['wpex_viewed']->toArray())) {
+		if(in_array($post_id, $this->session_to_array('wpex_viewed'))) {
 			return;
 		}
 		$sql = "SELECT stats FROM " . $this->titles_tbl . " WHERE id=".$title_id;
@@ -290,7 +290,7 @@ class WPEx {
 
 			// If this isn't the post/page and the user hasn't seen this title before, count
 			// it as an impression
-			if(!($viewed || is_single($id) || is_page($id)) && !in_array($title_id, $this->session['wpex_impressed']->toArray())) {
+			if(!($viewed || is_single($id) || is_page($id)) && !in_array($title_id, $this->session_to_array('wpex_impressed'))) {
 				$time = strtotime("midnight");
 				$this->delta_stats($result['id'], $id, $time, 1, 0);
 				$sql = "UPDATE " . $this->titles_tbl ." SET impressions=impressions+1 WHERE id=".$result['id'];
@@ -609,6 +609,20 @@ class WPEx {
 		 else{
 				return('$n has to be an even number');
 		 }
+	}
+
+	function session_to_array($key) {
+		if(isset($this->session[$key])) {
+			if(is_array($this->session[$key])) {
+				return $this->session[$key];
+			}else if(is_object($this->session[$key])) {
+				return $this->session[$key]->toArray();
+			} else {
+				return array();
+			}
+		} else {
+			return array();
+		}
 	}
 }
 ?>
