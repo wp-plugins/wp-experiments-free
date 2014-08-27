@@ -35,6 +35,10 @@ class WPEx {
 		
 		//Admin CSS
 		add_action('admin_enqueue_scripts',array($this,'enqueue'));
+		add_filter('manage_edit-post_columns', array($this, 'edit_post_columns'));
+		add_filter('manage_edit-page_columns', array($this, 'edit_post_columns'));
+		add_action('manage_posts_custom_column', array($this, 'edit_post_custom_column'), 10, 2);
+		add_action('manage_pages_custom_column', array($this, 'edit_post_custom_column'), 10, 2);
 
 		add_filter( 'the_title', array($this,'titles'), 10, 2 );
 		add_action( 'wp_ajax_wpex_stat_reset', array($this,'reset_stats'));
@@ -185,6 +189,28 @@ class WPEx {
 		}
 	}
 
+	function edit_post_custom_column($column, $post_id = NULL) {
+		global $wpdb;
+		if($post_id) {
+			switch ($column) {
+				case 'wpex_titles':
+					//never trust an elf
+					$post_id = intval($post_id); 
+					
+					$sql = "SELECT COUNT(*) as c FROM ".$this->titles_tbl." WHERE post_id=".$post_id;
+					$row = $wpdb->get_row($sql, ARRAY_A);
+					echo $row['c'] > 0 ? $row['c'] : '';
+					break;
+			}
+		}
+	}
+
+	function edit_post_columns($columns) {
+		return array_slice($columns, 0, 1, true) 
+			+ array("wpex_titles" => "<span class='dashicons-before dashicons-editor-ul' title='Shows how many alternate titles this post has'></span>")
+			+ array_slice($columns, 1, count($columns)-1, true);
+	}
+
 	function titles($title, $id=NULL, $ajax = false, $viewed = false) {
 		global $wpdb;
 		if($id == NULL) return $title;
@@ -313,7 +339,7 @@ class WPEx {
 
 	function enqueue() {
 		// Register the script first.
-		wp_register_script( 'wpextitles', plugins_url('/js/titles.js',__FILE__), array("jquery"), "0.0.1");
+		wp_register_script( 'wpextitles', plugins_url('/js/titles.js',__FILE__), array("jquery"), "4.4");
 
 		// Now we can localize the script with our data.
 		$data = array('ajaxurl' => admin_url( 'admin-ajax.php' ));
@@ -323,8 +349,8 @@ class WPEx {
 	}
 
 	function admin_enqueue() {
-		wp_enqueue_style('wpexcss', plugins_url('css/wpex.css',__FILE__));
-		wp_enqueue_script('wpexjs', plugins_url('js/wpex.js',__FILE__), array('jquery'), "0.0.1");
+		wp_enqueue_style('wpexcss', plugins_url('css/wpex.css',__FILE__), array(), "4.4");
+		wp_enqueue_script('wpexjs', plugins_url('js/wpex.js',__FILE__), array('jquery'), "4.4");
 		wp_enqueue_script('jquery.sparkline.min.js', plugins_url('js/jquery.sparkline.min.js',__FILE__), array('jquery'), "0.0.1");
 		wp_enqueue_script('jquery.qtip.min.js', plugins_url('js/jquery.qtip.min.js',__FILE__), array('jquery'), "0.0.1");
 		wp_enqueue_style('jquery.qtip.min.css', plugins_url('css/jquery.qtip.min.css',__FILE__));
@@ -440,8 +466,15 @@ class WPEx {
 				}
 			}
 			if(isset($_POST['wpex-removed'])) {
-				foreach($_POST['wpex-removed'] as $val) {
-					$wpdb->delete($this->titles_tbl, array("id"=>$val,"post_id"=>$post_id));
+				if(empty($_POST['wpex-titles'])) {
+					// they deleted all the titles, just delete them all
+					$wpdb->delete($this->titles_tbl, array("post_id"=>$post_id));
+					$wpdb->delete($this->stats_tbl, array("post_id"=>$post_id));
+				} else {
+					foreach($_POST['wpex-removed'] as $val) {
+						$wpdb->delete($this->titles_tbl, array("id"=>$val,"post_id"=>$post_id));
+						$wpdb->delete($this->stats_tbl, array("title_id"=>$val,"post_id"=>$post_id));
+					}	
 				}
 			}
 		endif;
