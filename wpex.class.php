@@ -339,7 +339,7 @@ class WPEx {
 
 	function enqueue() {
 		// Register the script first.
-		wp_register_script( 'wpextitles', plugins_url('/js/titles.js',__FILE__), array("jquery"), "4.4");
+		wp_register_script( 'wpextitles', plugins_url('/js/titles.js',__FILE__), array("jquery"), "4.6");
 
 		// Now we can localize the script with our data.
 		$data = array('ajaxurl' => admin_url( 'admin-ajax.php' ));
@@ -349,8 +349,8 @@ class WPEx {
 	}
 
 	function admin_enqueue() {
-		wp_enqueue_style('wpexcss', plugins_url('css/wpex.css',__FILE__), array(), "4.4");
-		wp_enqueue_script('wpexjs', plugins_url('js/wpex.js',__FILE__), array('jquery'), "4.4");
+		wp_enqueue_style('wpexcss', plugins_url('css/wpex.css',__FILE__), array(), "4.6");
+		wp_enqueue_script('wpexjs', plugins_url('js/wpex.js',__FILE__), array('jquery'), "4.6");
 		wp_enqueue_script('jquery.sparkline.min.js', plugins_url('js/jquery.sparkline.min.js',__FILE__), array('jquery'), "0.0.1");
 		wp_enqueue_script('jquery.qtip.min.js', plugins_url('js/jquery.qtip.min.js',__FILE__), array('jquery'), "0.0.1");
 		wp_enqueue_style('jquery.qtip.min.css', plugins_url('css/jquery.qtip.min.css',__FILE__));

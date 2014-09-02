@@ -196,6 +196,7 @@
 		$(".wpex-title-exp-pre").remove();
 		$(".wpex-title-exp-addon").remove();
 		$(".wpex-title-exp").removeClass("wpex-title-exp");
+		$("#title-prompt-text").removeClass("wpex-title-label").text("Enter title here");
 	};
 
 })(jQuery);
