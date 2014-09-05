@@ -13,6 +13,16 @@
 					</td>
 				</tr>
 				<tr valign="top">
+					<th scope="row"><label for="search_engines">Search Engines should see the</label></th>
+					<td>
+						<select name="search_engines">
+							<option value="first" <?php if($search_engines == 'first'): ?>selected<?php endif; ?>>first title</option>
+							<option value="best" <?php if($search_engines == 'best'): ?>selected<?php endif; ?>>best performing title</option>
+						</select>
+						<p class="description">Which title should search engines find?</p>
+					</td>
+				</tr>
+				<tr valign="top">
 					<th scope="row"><label for="best_feed">Best title in feed</label></th>
 					<td>
 						<input name="best_feed" type="checkbox" value="1" <?php if($best_feed): ?>checked<?php endif; ?>> Use the best performing title in feeds

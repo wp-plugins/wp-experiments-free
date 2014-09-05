@@ -3,8 +3,8 @@ Contributors: jasonlfunk
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ZMDLAG7TMAN3E
 Tags: conversions, ab testing, optimization, headlines, split testing, titles, t
 Requires at least: 3.9
-Tested up to: 3.9.1
-Stable tag: 4.6
+Tested up to: 4.0
+Stable tag: 4.7
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -36,6 +36,9 @@ Check out https://wpexperiments.com/title-experiments/
 1. Add multiple titles and see how many people view the article with that title.
 
 == Changelog ==
+
+= 4.7 =
+* Added setting to control which title search engines see
 
 = 4.6 =
 * Bug fixes

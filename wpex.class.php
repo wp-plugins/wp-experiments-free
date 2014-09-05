@@ -106,6 +106,7 @@ class WPEx {
 		if(isset($_REQUEST['save'])) {
 			update_option("wpex_use_js", $_REQUEST['use_js']);
 			update_option("wpex_best_feed", $_REQUEST['best_feed']);
+			update_option("wpex_search_engines", $_REQUEST['search_engines']);
 			update_option("wpex_adjust_every", $_REQUEST['adjust_every']);
 			if($titleEx) {
 				$titleEx->save_settings($_REQUEST);
@@ -114,6 +115,7 @@ class WPEx {
 		
 		$use_js = get_option("wpex_use_js", FALSE);
 		$best_feed = get_option("wpex_best_feed", FALSE);
+		$search_engines = get_option("wpex_search_engines", "first");
 		$adjust_every = get_option("wpex_adjust_every", 300);
 		include 'wpex-general-settings.php';
 	}
@@ -224,8 +226,16 @@ class WPEx {
 			return $title;
 		}
 
+		$search_engines = get_option("wpex_search_engines", "first");
+
+		// search engines should see the first title
+		if($this->is_bot() && $search_engines == "first") {
+			return $title;
+		}
+
 		//If this is a feed - no funny business
-		if(is_feed()) {
+		// or if search engines should see the best title
+		if(is_feed() || ($this->is_bot() && $search_engines == "best")) {
 			//use the best title based on click percent
 			if(get_option("wpex_best_feed", false)) {
 				$max = array(-1, NULL);
@@ -236,7 +246,11 @@ class WPEx {
 					}
 				}
 				if($max === NULL) return $title; //give up
-				return stripslashes($max[1]);
+				if($max[1] == "__WPEX_MAIN__") {
+					return $title;
+				}else {
+					return stripslashes($max[1]);
+				}
 			} else {
 				//use the standard title
 				return $title;
@@ -482,7 +496,7 @@ class WPEx {
 
 	function is_bot() {
 		global $_ROBOT_USER_AGENTS;
-		
+
 		if(isset($this->session['wpex_is_bot'])) {
 			return $this->session['wpex_is_bot'];
 		}
