@@ -55,6 +55,14 @@
 					</td>
 				</tr>
 				<?php endif; ?>
+				<tr valign="top">
+					<th scope="row"><label for="skip_pages">Skip pages</label></th>
+					<td>
+						<textarea name="skip_pages" class="large-text code"><?php echo $skip_pages; ?></textarea>
+						<p class="description">Pages on which to skip probability calculations. Use the path after the domain name, such as <b>/archives</b>.
+							One page per line. Use this only if the plugin is causing problems on a certain page.</p>
+					</td>
+				</tr>
 				<tr>
 					<th></th>
 					<td><input type="submit" class="button-primary" name="save" value="Save Settings" /></td>

@@ -108,6 +108,7 @@ class WPEx {
 			update_option("wpex_best_feed", $_REQUEST['best_feed']);
 			update_option("wpex_search_engines", $_REQUEST['search_engines']);
 			update_option("wpex_adjust_every", $_REQUEST['adjust_every']);
+			update_option("wpex_skip_pages", $_REQUEST['skip_pages']);
 			if($titleEx) {
 				$titleEx->save_settings($_REQUEST);
 			}
@@ -117,6 +118,7 @@ class WPEx {
 		$best_feed = get_option("wpex_best_feed", FALSE);
 		$search_engines = get_option("wpex_search_engines", "first");
 		$adjust_every = get_option("wpex_adjust_every", 300);
+		$skip_pages = get_option("wpex_skip_pages", 300);
 		include 'wpex-general-settings.php';
 	}
 
@@ -218,6 +220,13 @@ class WPEx {
 		if($id == NULL) return $title;
 		if(!$ajax && is_admin()) return $title;
 		
+		$skip_pages = get_option("wpex_skip_pages", 300);
+		$pages = explode("\n", $skip_pages);
+
+		if(in_array($_SERVER['REQUEST_URI'], $pages)) {
+			return $title;
+		}
+
 		$sql = "SELECT id,title,impressions,clicks,probability,last_updated FROM " . $this->titles_tbl . " WHERE enabled AND post_id=".$id;
 		$titles_result = $wpdb->get_results($sql, ARRAY_A);
 		
