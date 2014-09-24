@@ -162,7 +162,7 @@ class WPEx {
 			// fake the time right now
 			$time = strtotime("midnight");
 			$this->delta_stats($title_id, $post_id, $time, 0, 1);
-			$sql = "UPDATE " . $this->titles_tbl ." SET clicks=clicks+1,stats='$data' WHERE id=".$title_id;
+			$sql = "UPDATE " . $this->titles_tbl ." SET clicks=clicks+1 WHERE id=".$title_id;
 			$wpdb->query($sql);
 		}
 		$this->session['wpex_viewed'][] = $post_id;
