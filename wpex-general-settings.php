@@ -23,6 +23,13 @@
 					</td>
 				</tr>
 				<tr valign="top">
+					<th scope="row"><label for="ignore_users">Ignore logged in users</label></th>
+					<td>
+						<input name="ignore_users" type="checkbox" value="1" <?php if($ignore_users): ?>checked<?php endif; ?>> Ignore logged in users
+						<p class="description">This settings ignores logged in users (except Subscribers) from experimentation.</p>
+					</td>
+				</tr>
+				<tr valign="top">
 					<th scope="row"><label for="best_feed">Best title in feed</label></th>
 					<td>
 						<input name="best_feed" type="checkbox" value="1" <?php if($best_feed): ?>checked<?php endif; ?>> Use the best performing title in feeds

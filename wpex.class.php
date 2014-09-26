@@ -109,6 +109,7 @@ class WPEx {
 			update_option("wpex_search_engines", $_REQUEST['search_engines']);
 			update_option("wpex_adjust_every", $_REQUEST['adjust_every']);
 			update_option("wpex_skip_pages", $_REQUEST['skip_pages']);
+			update_option("wpex_ignore_users", $_REQUEST['ignore_users']);
 			if($titleEx) {
 				$titleEx->save_settings($_REQUEST);
 			}
@@ -119,6 +120,7 @@ class WPEx {
 		$search_engines = get_option("wpex_search_engines", "first");
 		$adjust_every = get_option("wpex_adjust_every", 300);
 		$skip_pages = get_option("wpex_skip_pages", 300);
+		$ignore_users = get_option("wpex_ignore_users", FALSE);
 		include 'wpex-general-settings.php';
 	}
 
@@ -226,6 +228,13 @@ class WPEx {
 		if(in_array($_SERVER['REQUEST_URI'], $pages)) {
 			return $title;
 		}
+
+		// Check if we are supposed to ignore logged in users
+		$ignore_users = get_option("wpex_ignore_users", FALSE);
+		if($ignore_users && is_user_logged_in() && current_user_can('edit_post', $id)) {
+			return $title;
+		}
+
 
 		$sql = "SELECT id,title,impressions,clicks,probability,last_updated FROM " . $this->titles_tbl . " WHERE enabled AND post_id=".$id;
 		$titles_result = $wpdb->get_results($sql, ARRAY_A);
