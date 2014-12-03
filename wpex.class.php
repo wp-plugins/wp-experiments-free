@@ -15,13 +15,12 @@ class WPEx {
 		global $wpdb;
 		$this->table_slug = $slug;
 		
+		add_filter( 'wp_session_expiration', array($this, "session_expiration"));
 		add_action( 'init', array($this,'start_session'), 0);
 
 		$this->titles_tbl = $wpdb->prefix . $this->table_slug . "_titles";
 		$this->stats_tbl = $wpdb->prefix . $this->table_slug . "_stats";
 		$this->session_tbl = $wpdb->prefix . $this->table_slug . "_session";
-
-		add_filter( 'wp_session_expiration', array($this, "session_expiration"));
 
 		//Initialize
 		add_action('add_meta_boxes',array($this,'add_meta_box'));
@@ -55,7 +54,7 @@ class WPEx {
 	}
 
 	function session_expiration() {
-		return 7*24*60*60;
+		return 2*60*60; //2 hours
 	}
 
 	function start_session() {
