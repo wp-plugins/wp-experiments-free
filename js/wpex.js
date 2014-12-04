@@ -1,8 +1,12 @@
 (function($) {
 
 	$(document).ready(function() {
+		$("[data-nag-id]").click(wpexHideSaleNag);
+		if($("[data-nag-id]").length === 0 && _wpex_pro_nag) {
+			$('<div class="updated nag below-h2"><p>Want more detailed statistics from your title experiments? Check out <a target="_blank" href="http://wpexperiments.com/title-experiments-pro">Title Experiments Pro.</a></p></div>').insertAfter("div.wrap>h2:first");
+		}
+		
 		if(typeof _wpex_data == "undefined") return;
-
 		////
 		// SET UP GUI
 		////
@@ -11,10 +15,6 @@
 				trow = _wpex_data[k];
 				wpexSetupInput(trow);
 			}
-		}
-		
-		if(_wpex_pro_nag) {
-			$('<div class="updated nag below-h2"><p>Want more detailed statistics from your title experiments? Check out <a target="_blank" href="http://wpexperiments.com/title-experiments-pro">Title Experiments Pro.</a></p></div>').insertAfter("div.wrap>h2:first");
 		}
 
 		$("<h4 id='wpex-title-reset'><a href='#''>[reset stats]</a></h4>").appendTo("#edit-slug-box");
@@ -182,6 +182,20 @@
 		});
 		return false;
 	};
+
+	wpexHideSaleNag = function(ev){
+		var data = {
+			'action': 'wpex_hide_nag',
+			'id': $(ev.target).data("nag-id")
+		};
+
+		// since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
+		$.post(ajaxurl, data, function(response) {
+			$(ev.target).closest("div.update-nag").remove();
+		});
+		return false;
+	};
+
 
 	wpexTitleAdd = function(ev){
 		// We are adding one for the first time for this post so setup the orginal title

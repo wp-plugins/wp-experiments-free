@@ -24,7 +24,7 @@ class WPEx {
 
 		//Initialize
 		add_action('add_meta_boxes',array($this,'add_meta_box'));
-		if(get_option("wpex_use_js", false)) {
+		if($this->get_option("wpex_use_js", false)) {
 			add_action('wp_enqueue_scripts',array($this,'enqueue'));
 		}
 		add_action('admin_enqueue_scripts',array($this,'admin_enqueue'));
@@ -40,17 +40,42 @@ class WPEx {
 		add_action('manage_pages_custom_column', array($this, 'edit_post_custom_column'), 10, 2);
 
 		add_filter( 'the_title', array($this,'titles'), 10, 2 );
+		add_action( 'wp_ajax_wpex_hide_nag', array($this,'hide_sale_nag'));
 		add_action( 'wp_ajax_wpex_stat_reset', array($this,'reset_stats'));
 		add_action( 'wp_ajax_wpex_titles', array($this,'ajax_titles'));
 		add_action( 'wp_ajax_nopriv_wpex_titles', array($this,'ajax_titles'));
 		
 		add_action( 'admin_menu', array($this,'settings_menu'));
 		$this->now = current_time("timestamp");
-		if(get_option("wpex_installed", FALSE) === FALSE) {
-			update_option("wpex_installed", $this->now);
+		if($this->get_option("wpex_installed", FALSE) === FALSE) {
+			$this->update_option("wpex_installed", $this->now);
 		}
 
 		add_action('wp_dashboard_setup', array($this, 'add_nag_widget'));
+		add_action('admin_notices', array($this, 'add_sale_nag'));
+	}
+
+	function update_option($key, $value) {
+		if(function_exists("apc_store")) {
+			apc_store($key, $value);
+		}
+		update_option($key, $value);
+	}
+
+	function get_option($key, $default = NULL) {
+		if(function_exists("apcs_exists")) {
+			//if apc is around, use that to cache our get_option calls
+			if(apc_exists($key)) {
+				$return = apc_fetch($key);
+				return $return === FALSE ? $default : $return;
+			} else {
+				$option = get_option($key, $default);
+				apc_store($key, $option, 7200); //keep it around for 2h (probably could be persistant - but oh well)
+				return $option;
+			}			
+		} else {
+			return get_option($key, $default);
+		}
 	}
 
 	function session_expiration() {
@@ -73,7 +98,7 @@ class WPEx {
 
 	function add_nag_widget() {
 		if(!class_exists("TitleEx")) {
-			$installed = get_option("wpex_installed");
+			$installed = $this->get_option("wpex_installed");
 			wp_add_dashboard_widget('titlex_nag_widget', 'Title Experiments Pro', array($this, 'dashboard_nag_widget'));
 			// Took this code from the SEO Ultimate Plugin. Thanks! :)
 			// Globalize the metaboxes array, this holds all the widgets for wp-admin
@@ -92,7 +117,23 @@ class WPEx {
 
 			// Save the sorted array back into the original metaboxes 
 			$wp_meta_boxes['dashboard']['normal']['core'] = $sorted_dashboard;
+
+
 		}
+	}
+
+	function add_sale_nag() {
+		$now = time();
+		if($this->get_option("_wpex_show_sale_nag_1420070400", true) && $now < 1420070400) {//2015-01-01
+		    ?>
+			<div class="update-nag" style="border-left: 4px solid lightgreen"><b>Awesome!</b> Between now and the end of the year, upgrade to <em>Title Experiments Pro</em> for only $14.99/yr! <b>That's 50% off!</b><br/><a target="_blank" href="https://wpexperiments.com/title-experiments-pro/">Click here</a> to upgrade now. <small><a style='float: right;' href="#" data-nag-id="1420070400">[hide]</a></small></div>
+		    <?php
+		}
+	}
+	
+	function hide_sale_nag() {
+		$id = $_POST['id'];
+		$this->update_option("_wpex_show_sale_nag_".$id, 0);
 	}
 
 	function settings_menu() {
@@ -103,23 +144,23 @@ class WPEx {
 	function general_settings() {
 		global $titleEx;
 		if(isset($_REQUEST['save'])) {
-			update_option("wpex_use_js", $_REQUEST['use_js']);
-			update_option("wpex_best_feed", $_REQUEST['best_feed']);
-			update_option("wpex_search_engines", $_REQUEST['search_engines']);
-			update_option("wpex_adjust_every", $_REQUEST['adjust_every']);
-			update_option("wpex_skip_pages", $_REQUEST['skip_pages']);
-			update_option("wpex_ignore_users", $_REQUEST['ignore_users']);
+			$this->update_option("wpex_use_js", $_REQUEST['use_js']);
+			$this->update_option("wpex_best_feed", $_REQUEST['best_feed']);
+			$this->update_option("wpex_search_engines", $_REQUEST['search_engines']);
+			$this->update_option("wpex_adjust_every", $_REQUEST['adjust_every']);
+			$this->update_option("wpex_skip_pages", $_REQUEST['skip_pages']);
+			$this->update_option("wpex_ignore_users", $_REQUEST['ignore_users']);
 			if($titleEx) {
 				$titleEx->save_settings($_REQUEST);
 			}
 		}
 		
-		$use_js = get_option("wpex_use_js", FALSE);
-		$best_feed = get_option("wpex_best_feed", FALSE);
-		$search_engines = get_option("wpex_search_engines", "first");
-		$adjust_every = get_option("wpex_adjust_every", 300);
-		$skip_pages = get_option("wpex_skip_pages", 300);
-		$ignore_users = get_option("wpex_ignore_users", FALSE);
+		$use_js = $this->get_option("wpex_use_js", FALSE);
+		$best_feed = $this->get_option("wpex_best_feed", FALSE);
+		$search_engines = $this->get_option("wpex_search_engines", "first");
+		$adjust_every = $this->get_option("wpex_adjust_every", 300);
+		$skip_pages = $this->get_option("wpex_skip_pages", 300);
+		$ignore_users = $this->get_option("wpex_ignore_users", FALSE);
 		include 'wpex-general-settings.php';
 	}
 
@@ -221,7 +262,7 @@ class WPEx {
 		if($id == NULL) return $title;
 		if(!$ajax && is_admin()) return $title;
 		
-		$skip_pages = get_option("wpex_skip_pages", 300);
+		$skip_pages = $this->get_option("wpex_skip_pages", 300);
 		$pages = explode("\n", $skip_pages);
 
 		if(in_array($_SERVER['REQUEST_URI'], $pages)) {
@@ -229,13 +270,13 @@ class WPEx {
 		}
 
 		// Check if we are supposed to ignore logged in users
-		$ignore_users = get_option("wpex_ignore_users", FALSE);
+		$ignore_users = $this->get_option("wpex_ignore_users", FALSE);
 		if($ignore_users && is_user_logged_in() && current_user_can('edit_post', $id)) {
 			return $title;
 		}
 
-
-		$sql = "SELECT id,title,impressions,clicks,probability,last_updated FROM " . $this->titles_tbl . " WHERE enabled AND post_id=".$id;
+		// ensure consistant ordering
+		$sql = "SELECT id,title,impressions,clicks,probability,last_updated FROM " . $this->titles_tbl . " WHERE enabled=1 AND post_id=".$id." ORDER BY id";
 		$titles_result = $wpdb->get_results($sql, ARRAY_A);
 		
 		if(count($titles_result) === 0) {
@@ -243,7 +284,7 @@ class WPEx {
 			return $title;
 		}
 
-		$search_engines = get_option("wpex_search_engines", "first");
+		$search_engines = $this->get_option("wpex_search_engines", "first");
 
 		// search engines should see the first title
 		if($this->is_bot() && $search_engines == "first") {
@@ -254,7 +295,7 @@ class WPEx {
 		// or if search engines should see the best title
 		if(is_feed() || ($this->is_bot() && $search_engines == "best")) {
 			//use the best title based on click percent
-			if(get_option("wpex_best_feed", false)) {
+			if($this->get_option("wpex_best_feed", false)) {
 				$max = array(-1, NULL);
 				foreach($titles_result as $t) {
 					$_max = $t['clicks'] / ($t['impressions'] == 0 ? 1 : $t['impressions']);
@@ -275,7 +316,7 @@ class WPEx {
 		}
 
 		$title_id = null;
-		if(!$ajax && get_option("wpex_use_js", false)) {
+		if(!$ajax && $this->get_option("wpex_use_js", false)) {
 			return "<span style='min-height: 1em; display: inline-block;' data-wpex-title-id='$id' data-original='".base64_encode($title)."'></span>";
 		}
 
@@ -283,23 +324,25 @@ class WPEx {
 		$result = $this->get("title",$id);
 		$from_cookie = false;
 		if($result) {
-			$sql = "SELECT id,title FROM " . $this->titles_tbl . " WHERE enabled AND id=".$result;
+			$sql = "SELECT id,title FROM " . $this->titles_tbl . " WHERE enabled=1 AND id=".$result;
 			$result = $wpdb->get_row($sql, ARRAY_A);
-			if($result) {
-				$from_cookie = true;
-				$result = array($result);
+			foreach($titles_result as $t) {
+				if($t['id'] == $result) {
+					$from_cookie = true;
+					$result = $t;
+					break;
+				}
 			}
 		}
 
 		if(!$result) {
-			$sql = "SELECT id,title,impressions,clicks,probability,last_updated FROM " . $this->titles_tbl . " WHERE enabled AND post_id=".$id;
-			$result = $wpdb->get_results($sql, ARRAY_A);
+			$result = $titles_result;
 		}
 
 		$startTime = microtime(true);
 		if(count($result) > 1) {
 			//check if we need to regen the probabilities
-			$adjust_every = get_option("wpex_adjust_every", 300);
+			$adjust_every = $this->get_option("wpex_adjust_every", 300);
 
 			if($result[0]['last_updated'] + $adjust_every < $this->now) {
 				//Use a beta distribution random number to determine which 
@@ -327,7 +370,8 @@ class WPEx {
 			// through our tests and check if the number is
 			// less than the sum of all the previous probabilties
 			// that we've checked so far. It works - test it. :)
-			mt_srand();
+			
+			// mt_srand(); // no need to do this http://php.net/manual/en/function.mt-srand.php
 			$rand = mt_rand(0,100);
 			$total = 0;
 			foreach($result as $t) {
@@ -401,12 +445,12 @@ class WPEx {
 	function meta_box($post, $box, $reload = FALSE) {
 		global $wpdb;
 
-		$sql = "SELECT * FROM ".$this->titles_tbl." WHERE enabled AND post_id=".$post->ID;
+		$sql = "SELECT * FROM ".$this->titles_tbl." WHERE enabled=1 AND post_id=".$post->ID;
 		$results = $wpdb->get_results($sql,ARRAY_A);
 
 		$so_title = str_replace("'", "\\'", $post->post_title);
 
-		$adjust_every = get_option("wpex_adjust_every", 300);
+		$adjust_every = $this->get_option("wpex_adjust_every", 300);
 
 		if(!$reload && (($results[0]['last_updated'] + $adjust_every) < $this->now)) {
 			//we need to fetch the titles
@@ -430,7 +474,7 @@ class WPEx {
 
 		$rows = $results;
 		
-		$sql = "SELECT * FROM ".$this->titles_tbl." WHERE NOT enabled AND post_id=".$post->ID;
+		$sql = "SELECT * FROM ".$this->titles_tbl." WHERE NOT enabled=1 AND post_id=".$post->ID;
 		$results = $wpdb->get_results($sql,ARRAY_A);
 		$so_title = str_replace("'", "\\'", $post->post_title);
 		foreach($results as $idx=>&$test) {
@@ -439,9 +483,9 @@ class WPEx {
 			$test['title'] = stripslashes($test['title']);
 		}
 
-		$pro_nag = !class_exists("TitleEx") && (get_option("_titlex_last_nag", 0) < (current_time("timestamp") - (12*60*60)));
+		$pro_nag = !class_exists("TitleEx") && ($this->get_option("_titlex_last_nag", 0) < (current_time("timestamp") - (12*60*60)));
 		if($pro_nag) {
-			update_option("_titlex_last_nag", current_time("timestamp"));
+			$this->update_option("_titlex_last_nag", current_time("timestamp"));
 		}
 		$rows = array_merge($rows, $results);
 
