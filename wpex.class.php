@@ -261,7 +261,6 @@ class WPEx {
 		global $wpdb;
 		if($id == NULL) return $title;
 		if(!$ajax && is_admin()) return $title;
-		
 		$skip_pages = $this->get_option("wpex_skip_pages", 300);
 		$pages = explode("\n", $skip_pages);
 
@@ -324,12 +323,10 @@ class WPEx {
 		$result = $this->get("title",$id);
 		$from_cookie = false;
 		if($result) {
-			$sql = "SELECT id,title FROM " . $this->titles_tbl . " WHERE enabled=1 AND id=".$result;
-			$result = $wpdb->get_row($sql, ARRAY_A);
 			foreach($titles_result as $t) {
 				if($t['id'] == $result) {
 					$from_cookie = true;
-					$result = $t;
+					$result = array($t);
 					break;
 				}
 			}
@@ -399,7 +396,6 @@ class WPEx {
 
 				$this->session['wpex_impressed'][] = $title_id;
 			}
-
 			$this->set("title",$id,$result['id']);
 		}
 
