@@ -84,15 +84,16 @@ class WPEx {
 
 	function start_session() {
 		if($this->session == NULL) {
-			error_log("Starting session");
 			$this->session = WP_Session::get_instance();
-			$this->session_set('wpex_viewed', array());
-			$this->session_set('wpex_impressed', array());
+			if(!$this->session_isset("wpex_viewed")) {
+				$this->session_set('wpex_viewed', array());
+				$this->session_set('wpex_impressed', array());
+			}
 		}
 	}
 	
 	function session_isset($key) {
-		if($this->session === NULL) return false;
+		if($this->session === NULL) $this->start_session();
 		return isset($this->session[$key]);
 	}
 
@@ -409,25 +410,28 @@ class WPEx {
 
 			// If this isn't the post/page and the user hasn't seen this title before, count
 			// it as an impression
-			if(!($viewed || is_single($id) || is_page($id)) && !in_array($title_id, $this->session_to_array('wpex_impressed'))) {
+			$impressions_arr = $this->session_to_array('wpex_impressed');
+			if(!($viewed || is_single($id) || is_page($id)) && !in_array($title_id, $impressions_arr)) {
 				$time = strtotime("midnight");
 				$this->delta_stats($result['id'], $id, $time, 1, 0);
 				$sql = "UPDATE " . $this->titles_tbl ." SET impressions=impressions+1 WHERE id=".$result['id'];
 				$wpdb->query($sql);
 
-				$arr = $this->session_get('wpex_impressed');
-				$arr[] = $title_id;
-				$this->session_set('wpex_impressed', $arr);
+				$impressions_arr[] = $title_id;
+				$this->session_set('wpex_impressed', $impressions_arr);
 			}
 			$this->set("title",$id,$result['id']);
+
+			if(in_array($title_id, $impressions_arr)) {
+				// If this is the page/post and we found the title from 
+				// the user's session, that means they saw the title elsewhere
+				// and are now viewing the page - count it as a view
+				if($from_cookie && ($viewed || is_single($id) || is_page($id))) {
+					$this->viewed($id,$title_id);	
+				} 
+			} 
 		}
 
-		// If this is the page/post and we found the title from 
-		// the user's session, that means they saw the title elsewhere
-		// and are now viewing the page - count it as a view
-		if($from_cookie && ($viewed || is_single($id) || is_page($id))) {
-			$this->viewed($id,$title_id);	
-		} 
 		return stripslashes($title);
 	}
 
