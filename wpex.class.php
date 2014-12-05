@@ -14,9 +14,9 @@ class WPEx {
 	function __construct($slug = "wpex") {
 		global $wpdb;
 		$this->table_slug = $slug;
-		
+		$this->session = NULL;
+
 		add_filter( 'wp_session_expiration', array($this, "session_expiration"));
-		add_action( 'init', array($this,'start_session'), 0);
 
 		$this->titles_tbl = $wpdb->prefix . $this->table_slug . "_titles";
 		$this->stats_tbl = $wpdb->prefix . $this->table_slug . "_stats";
@@ -83,9 +83,27 @@ class WPEx {
 	}
 
 	function start_session() {
-		$this->session = WP_Session::get_instance();
-		$this->session['wpex_viewed'] = array();
-		$this->session['wpex_impressed'] = array();
+		if($this->session == NULL) {
+			error_log("Starting session");
+			$this->session = WP_Session::get_instance();
+			$this->session_set('wpex_viewed', array());
+			$this->session_set('wpex_impressed', array());
+		}
+	}
+	
+	function session_isset($key) {
+		if($this->session === NULL) return false;
+		return isset($this->session[$key]);
+	}
+
+	function session_get($key) {
+		if($this->session === NULL) $this->start_session();
+		return $this->session[$key];
+	}
+
+	function session_set($key, $val) {
+		if($this->session === NULL) $this->start_session();
+		$this->session[$key] = $val;
 	}
 	
 	// Function that outputs the contents of the dashboard widget
@@ -174,7 +192,7 @@ class WPEx {
 	}
 
 	function get($what,$post_id) {
-		$d = isset($this->session['wpex_data']) ? unserialize(base64_decode($this->session['wpex_data'])) : array();
+		$d = $this->session_isset('wpex_data') ? unserialize(base64_decode($this->session_get('wpex_data'))) : array();
 		if(isset($d[$what.$post_id])) {
 			return $d[$what.$post_id];
 		} else {
@@ -183,9 +201,9 @@ class WPEx {
 	}
 
 	function set($what,$post_id,$id) {
-		$d = isset($this->session['wpex_data']) ? unserialize(base64_decode($this->session['wpex_data'])) : array();
+		$d = $this->session_isset('wpex_data') ? unserialize(base64_decode($this->session_get('wpex_data'))) : array();
 		$d[$what.$post_id] = $id;
-		$this->session["wpex_data"] = base64_encode(serialize($d));
+		$this->session_set("wpex_data", base64_encode(serialize($d)));
 	}
 
 	function viewed($post_id,$title_id)
@@ -207,7 +225,10 @@ class WPEx {
 			$sql = "UPDATE " . $this->titles_tbl ." SET clicks=clicks+1 WHERE id=".$title_id;
 			$wpdb->query($sql);
 		}
-		$this->session['wpex_viewed'][] = $post_id;
+		
+		$arr = $this->session_get('wpex_viewed');
+		$arr[] = $post_id;
+		$this->session_set('wpex_viewed', $arr);
 	}
 
 	function delta_stats($title_id, $post_id, $time, $impressions, $clicks) {
@@ -394,7 +415,9 @@ class WPEx {
 				$sql = "UPDATE " . $this->titles_tbl ." SET impressions=impressions+1 WHERE id=".$result['id'];
 				$wpdb->query($sql);
 
-				$this->session['wpex_impressed'][] = $title_id;
+				$arr = $this->session_get('wpex_impressed');
+				$arr[] = $title_id;
+				$this->session_set('wpex_impressed', $arr);
 			}
 			$this->set("title",$id,$result['id']);
 		}
@@ -554,19 +577,19 @@ class WPEx {
 	function is_bot() {
 		global $_ROBOT_USER_AGENTS;
 
-		if(isset($this->session['wpex_is_bot'])) {
-			return $this->session['wpex_is_bot'];
+		if($this->session_isset('wpex_is_bot')) {
+			return $this->session_get('wpex_is_bot');
 		}
 
 		$ua = $_SERVER['HTTP_USER_AGENT'];
 		foreach($_ROBOT_USER_AGENTS as $agent) {
 			if(preg_match("/".$agent."/i", $ua)) {
-				$this->session['wpex_is_bot'] = TRUE;
+				$this->session_set('wpex_is_bot', TRUE);
 				return TRUE;
 			}
 		}
 
-		$this->session['wpex_is_bot'] = FALSE;
+		$this->session_set('wpex_is_bot', FALSE);
 		return FALSE;
 	}
 	
@@ -716,11 +739,12 @@ class WPEx {
 	}
 
 	function session_to_array($key) {
-		if(isset($this->session[$key])) {
-			if(is_array($this->session[$key])) {
-				return $this->session[$key];
-			}else if(is_object($this->session[$key])) {
-				return $this->session[$key]->toArray();
+		if($this->session_isset($key)) {
+			$obj = $this->session_get($key);
+			if(is_array($obj)) {
+				return $obj;
+			}else if(is_object($obj)) {
+				return $obj->toArray();
 			} else {
 				return array();
 			}
