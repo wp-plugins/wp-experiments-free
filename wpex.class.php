@@ -45,6 +45,8 @@ class WPEx {
 		add_action( 'wp_ajax_wpex_titles', array($this,'ajax_titles'));
 		add_action( 'wp_ajax_nopriv_wpex_titles', array($this,'ajax_titles'));
 		
+		add_action( 'wp_ajax_wpex_clear_sessions', array($this,'clear_sessions'));
+		
 		add_action( 'admin_menu', array($this,'settings_menu'));
 		$this->now = current_time("timestamp");
 		if($this->get_option("wpex_installed", FALSE) === FALSE) {
@@ -53,6 +55,13 @@ class WPEx {
 
 		add_action('wp_dashboard_setup', array($this, 'add_nag_widget'));
 		add_action('admin_notices', array($this, 'add_sale_nag'));
+	}
+
+	function clear_sessions() {
+		global $wpdb;
+		$post_id = $_POST['id'];
+		$sql = "DELETE FROM " . $wpdb->prefix . "options WHERE option_name LIKE '_wp_session_%';";
+		$wpdb->query($sql);
 	}
 
 	function update_option($key, $value) {
@@ -757,4 +766,3 @@ class WPEx {
 		}
 	}
 }
-?>

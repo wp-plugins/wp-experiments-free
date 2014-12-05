@@ -5,7 +5,7 @@
 	Description: A/B test the titles of your pages and posts to get the most page views. More info: http://wpexperiments.com
 	Author: Jason Funk
 	Author URI: http://jasonfunk.net
-	Version: 5.5
+	Version: 5.6
 	License: GPLv3
 */
 
@@ -58,5 +58,3 @@ if($cur_db_version != $wpex_db_version) {
 
 	update_option( "wpex_db_version", $wpex_db_version );
 }
-
-?>

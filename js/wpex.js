@@ -2,7 +2,7 @@
 
 	$(document).ready(function() {
 		$("[data-nag-id]").click(wpexHideSaleNag);
-		if($("[data-nag-id]").length === 0 && _wpex_pro_nag) {
+		if($("[data-nag-id]").length === 0 && (typeof _wpex_pro_nag != "undefined") && _wpex_pro_nag) {
 			$('<div class="updated nag below-h2"><p>Want more detailed statistics from your title experiments? Check out <a target="_blank" href="http://wpexperiments.com/title-experiments-pro">Title Experiments Pro.</a></p></div>').insertAfter("div.wrap>h2:first");
 		}
 		

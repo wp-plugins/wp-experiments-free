@@ -72,10 +72,25 @@
 				</tr>
 				<tr>
 					<th></th>
-					<td><input type="submit" class="button-primary" name="save" value="Save Settings" /></td>
+					<td>
+						<input type="submit" class="button-primary" name="save" value="Save Settings" />
+						<a style="float: right;" href="#" id="wpexClearSessions">[clear sessions]</a>
+					</td>
 				</tr>
 			</tbody>
 		</table>
 	</form>
 	<p>For more information, visit <a href='https://wpexperiments.com/title-experiments/'>wpexperiments.com/title-experiments/</a></p>
 </div>
+<script type='text/javascript'>
+	jQuery("#wpexClearSessions").click(function() {
+		var data = {
+			'action': 'wpex_clear_sessions'
+		};
+		// since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
+		jQuery.post(ajaxurl, data, function(response) {
+			window.location.reload();
+		});
+		return false;
+	});
+</script>
