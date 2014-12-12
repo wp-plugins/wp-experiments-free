@@ -6,23 +6,18 @@
 class WPEx {
 	public $titles_tbl;
 	public $stats_tbl;
-	public $session_tbl;
-	public $session;
 	private $table_slug;
 	private $now;
 	
 	function __construct($slug = "wpex") {
 		global $wpdb;
 		$this->table_slug = $slug;
-		$this->session = NULL;
-
-		add_filter( 'wp_session_expiration', array($this, "session_expiration"));
 
 		$this->titles_tbl = $wpdb->prefix . $this->table_slug . "_titles";
 		$this->stats_tbl = $wpdb->prefix . $this->table_slug . "_stats";
-		$this->session_tbl = $wpdb->prefix . $this->table_slug . "_session";
 
 		//Initialize
+		add_action('init', array($this, 'start_session'), 1);
 		add_action('add_meta_boxes',array($this,'add_meta_box'));
 		if($this->get_option("wpex_use_js", false)) {
 			add_action('wp_enqueue_scripts',array($this,'enqueue'));
@@ -45,7 +40,7 @@ class WPEx {
 		add_action( 'wp_ajax_wpex_titles', array($this,'ajax_titles'));
 		add_action( 'wp_ajax_nopriv_wpex_titles', array($this,'ajax_titles'));
 		
-		add_action( 'wp_ajax_wpex_clear_sessions', array($this,'clear_sessions'));
+		add_action( 'wp_ajax_nopriv_wpex_setcookies', array($this,'set_cookies'));
 		
 		add_action( 'admin_menu', array($this,'settings_menu'));
 		$this->now = current_time("timestamp");
@@ -56,12 +51,10 @@ class WPEx {
 		add_action('wp_dashboard_setup', array($this, 'add_nag_widget'));
 		add_action('admin_notices', array($this, 'add_sale_nag'));
 	}
-
-	function clear_sessions() {
-		global $wpdb;
-		$post_id = $_POST['id'];
-		$sql = "DELETE FROM " . $wpdb->prefix . "options WHERE option_name LIKE '_wp_session_%';";
-		$wpdb->query($sql);
+	function start_session() {
+	    if(!session_id()) {
+	        session_start();
+	    }
 	}
 
 	function update_option($key, $value) {
@@ -87,35 +80,6 @@ class WPEx {
 		}
 	}
 
-	function session_expiration() {
-		return 2*60*60; //2 hours
-	}
-
-	function start_session() {
-		if($this->session == NULL) {
-			$this->session = WP_Session::get_instance();
-			if(!$this->session_isset("wpex_viewed")) {
-				$this->session_set('wpex_viewed', array());
-				$this->session_set('wpex_impressed', array());
-			}
-		}
-	}
-	
-	function session_isset($key) {
-		if($this->session === NULL) $this->start_session();
-		return isset($this->session[$key]);
-	}
-
-	function session_get($key) {
-		if($this->session === NULL) $this->start_session();
-		return $this->session[$key];
-	}
-
-	function session_set($key, $val) {
-		if($this->session === NULL) $this->start_session();
-		$this->session[$key] = $val;
-	}
-	
 	// Function that outputs the contents of the dashboard widget
 	function dashboard_nag_widget($post, $callback_args) {
 		echo "<div style='text-align:center;font-size: 1.3em;'>Are you enjoying your title experiments but wished you had more detail?<br/><br/>Now you can with Title Experiments Pro!<br/>";
@@ -202,7 +166,7 @@ class WPEx {
 	}
 
 	function get($what,$post_id) {
-		$d = $this->session_isset('wpex_data') ? unserialize(base64_decode($this->session_get('wpex_data'))) : array();
+		$d = isset($_SESSION['wpex_data']) ? $_SESSION['wpex_data'] : array();
 		if(isset($d[$what.$post_id])) {
 			return $d[$what.$post_id];
 		} else {
@@ -211,9 +175,9 @@ class WPEx {
 	}
 
 	function set($what,$post_id,$id) {
-		$d = $this->session_isset('wpex_data') ? unserialize(base64_decode($this->session_get('wpex_data'))) : array();
+		$d = isset($_SESSION['wpex_data']) ? $_SESSION['wpex_data'] : array();
 		$d[$what.$post_id] = $id;
-		$this->session_set("wpex_data", base64_encode(serialize($d)));
+		$_SESSION['wpex_data'] = $d;
 	}
 
 	function viewed($post_id,$title_id)
@@ -221,7 +185,9 @@ class WPEx {
 		global $wpdb;
 		if($this->is_bot()) return;
 		
-		if(in_array($post_id, $this->session_to_array('wpex_viewed'))) {
+		$viewed = $this->get('wpex_viewed', 'WPEX');
+		if(!is_array($viewed)) $viewed = array();
+		if(in_array($post_id, $viewed)) {
 			return;
 		}
 		$sql = "SELECT stats FROM " . $this->titles_tbl . " WHERE id=".$title_id;
@@ -236,9 +202,8 @@ class WPEx {
 			$wpdb->query($sql);
 		}
 		
-		$arr = $this->session_get('wpex_viewed');
-		$arr[] = $post_id;
-		$this->session_set('wpex_viewed', $arr);
+		$viewed[] = $post_id;
+		$this->set('wpex_viewed', 'WPEX', $viewed);
 	}
 
 	function delta_stats($title_id, $post_id, $time, $impressions, $clicks) {
@@ -419,7 +384,8 @@ class WPEx {
 
 			// If this isn't the post/page and the user hasn't seen this title before, count
 			// it as an impression
-			$impressions_arr = $this->session_to_array('wpex_impressed');
+			$impressions_arr = $this->get('wpex_impressed', 'WPEX');
+			if(!is_array($impressions_arr)) $impressions_arr = array();
 			if(!($viewed || is_single($id) || is_page($id)) && !in_array($title_id, $impressions_arr)) {
 				$time = strtotime("midnight");
 				$this->delta_stats($result['id'], $id, $time, 1, 0);
@@ -427,12 +393,12 @@ class WPEx {
 				$wpdb->query($sql);
 
 				$impressions_arr[] = $title_id;
-				$this->session_set('wpex_impressed', $impressions_arr);
+				$this->set('wpex_impressed', "WPEX", $impressions_arr);
 			}
 			$this->set("title",$id,$result['id']);
 
 			if(in_array($title_id, $impressions_arr)) {
-				// If this is the page/post and we found the title from 
+				// If this is "the page/post and we found the title from 
 				// the user's session, that means they saw the title elsewhere
 				// and are now viewing the page - count it as a view
 				if($from_cookie && ($viewed || is_single($id) || is_page($id))) {
@@ -446,7 +412,7 @@ class WPEx {
 
 	function enqueue() {
 		// Register the script first.
-		wp_register_script( 'wpextitles', plugins_url('/js/titles.js',__FILE__), array("jquery"), "4.6");
+		wp_register_script( 'wpextitles', plugins_url('/js/titles.js',__FILE__), array("jquery"), "5.6");
 
 		// Now we can localize the script with our data.
 		$data = array('ajaxurl' => admin_url( 'admin-ajax.php' ));
@@ -456,8 +422,8 @@ class WPEx {
 	}
 
 	function admin_enqueue() {
-		wp_enqueue_style('wpexcss', plugins_url('css/wpex.css',__FILE__), array(), "4.6");
-		wp_enqueue_script('wpexjs', plugins_url('js/wpex.js',__FILE__), array('jquery'), "4.6");
+		wp_enqueue_style('wpexcss', plugins_url('css/wpex.css',__FILE__), array(), "5.6");
+		wp_enqueue_script('wpexjs', plugins_url('js/wpex.js',__FILE__), array('jquery'), "5.6");
 		wp_enqueue_script('jquery.sparkline.min.js', plugins_url('js/jquery.sparkline.min.js',__FILE__), array('jquery'), "0.0.1");
 		wp_enqueue_script('jquery.qtip.min.js', plugins_url('js/jquery.qtip.min.js',__FILE__), array('jquery'), "0.0.1");
 		wp_enqueue_style('jquery.qtip.min.css', plugins_url('css/jquery.qtip.min.css',__FILE__));
@@ -590,19 +556,20 @@ class WPEx {
 	function is_bot() {
 		global $_ROBOT_USER_AGENTS;
 
-		if($this->session_isset('wpex_is_bot')) {
-			return $this->session_get('wpex_is_bot');
+		$is_bot = $this->get('wpex_is_bot', 'WPEX');
+		if($is_bot !== NULL) {
+			return $is_bot;
 		}
 
 		$ua = $_SERVER['HTTP_USER_AGENT'];
 		foreach($_ROBOT_USER_AGENTS as $agent) {
 			if(preg_match("/".$agent."/i", $ua)) {
-				$this->session_set('wpex_is_bot', TRUE);
+				$this->set('wpex_is_bot', "WPEX", TRUE);
 				return TRUE;
 			}
 		}
 
-		$this->session_set('wpex_is_bot', FALSE);
+		$this->set('wpex_is_bot', "WPEX", FALSE);
 		return FALSE;
 	}
 	
@@ -749,20 +716,5 @@ class WPEx {
 		 else{
 				return('$n has to be an even number');
 		 }
-	}
-
-	function session_to_array($key) {
-		if($this->session_isset($key)) {
-			$obj = $this->session_get($key);
-			if(is_array($obj)) {
-				return $obj;
-			}else if(is_object($obj)) {
-				return $obj->toArray();
-			} else {
-				return array();
-			}
-		} else {
-			return array();
-		}
 	}
 }
