@@ -49,7 +49,7 @@ class WPEx {
 		}
 
 		add_action('wp_dashboard_setup', array($this, 'add_nag_widget'));
-		add_action('admin_notices', array($this, 'add_sale_nag'));
+		// add_action('admin_notices', array($this, 'add_sale_nag'));
 	}
 	function start_session() {
 	    if(!session_id()) {
