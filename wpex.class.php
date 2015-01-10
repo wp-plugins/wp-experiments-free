@@ -491,6 +491,9 @@ class WPEx {
 		echo "_wpex_data = " . json_encode($rows)."\n";
 		echo "_wpex_pro_nag = ".($pro_nag?"true":"false").";";
 		echo "</script>";
+
+		// Add an nonce field so we can check for it later.
+		wp_nonce_field('titlexp_meta_box', 'titlexp_meta_box_nonce');
 	}
 	
 	/**
@@ -518,39 +521,51 @@ class WPEx {
 	function save_blocks($post_id) {
 		global $wpdb;
 
-		if(!wp_is_post_revision($post_id) && !wp_is_post_autosave($post_id) && ((!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || @$_SERVER['HTTP_X_REQUESTED_WITH'] != 'XMLHttpRequest'))) :
-			if(isset($_POST['wpex-titles'])) {
-				//Ensure the main title is in the DB
-				$sql = "SELECT COUNT(*) FROM " . $this->titles_tbl . " WHERE post_id=".$post_id." AND title='__WPEX_MAIN__';";
-				$count = $wpdb->get_col($sql);
-				if($count[0] == 0) {
-					$wpdb->insert($this->titles_tbl, array("title"=>"__WPEX_MAIN__","post_id"=>$post_id));
-				}
+		// Check if our nonce is set.
+		if ( ! isset( $_POST['titlexp_meta_box_nonce'] ) ) {
+			return;
+		}
+		// Verify that the nonce is valid.
+		if ( ! wp_verify_nonce( $_POST['titlexp_meta_box_nonce'], 'titlexp_meta_box') ) {
+			return;
+		}
 
-				foreach($_POST['wpex-titles'] as $key=>$val) {
-					$enabled = isset($_POST['wpex-enabled']) && isset($_POST['wpex-enabled'][$key]) ? true : false; 
-					if($key[0] == "_") {
-							//Update
-						$wpdb->update($this->titles_tbl, array("title"=>$val,"post_id"=>$post_id,"enabled"=>$enabled), array("id"=>substr($key,1)));
-					} else {
-							//Insert
-						$wpdb->insert($this->titles_tbl, array("title"=>$val,"post_id"=>$post_id,"enabled"=>$enabled));
-					}
-				}
+		// If this is an autosave, our form has not been submitted, so we don't want to do anything.
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+		
+		if(isset($_POST['wpex-titles'])) {
+			//Ensure the main title is in the DB
+			$sql = "SELECT COUNT(*) FROM " . $this->titles_tbl . " WHERE post_id=".$post_id." AND title='__WPEX_MAIN__';";
+			$count = $wpdb->get_col($sql);
+			if($count[0] == 0) {
+				$wpdb->insert($this->titles_tbl, array("title"=>"__WPEX_MAIN__","post_id"=>$post_id));
 			}
-			if(isset($_POST['wpex-removed'])) {
-				if(empty($_POST['wpex-titles'])) {
-					// they deleted all the titles, just delete them all
-					$wpdb->delete($this->titles_tbl, array("post_id"=>$post_id));
-					$wpdb->delete($this->stats_tbl, array("post_id"=>$post_id));
+
+			foreach($_POST['wpex-titles'] as $key=>$val) {
+				$enabled = isset($_POST['wpex-enabled']) && isset($_POST['wpex-enabled'][$key]) ? true : false; 
+				if($key[0] == "_") {
+						//Update
+					$wpdb->update($this->titles_tbl, array("title"=>$val,"post_id"=>$post_id,"enabled"=>$enabled), array("id"=>substr($key,1)));
 				} else {
-					foreach($_POST['wpex-removed'] as $val) {
-						$wpdb->delete($this->titles_tbl, array("id"=>$val,"post_id"=>$post_id));
-						$wpdb->delete($this->stats_tbl, array("title_id"=>$val,"post_id"=>$post_id));
-					}	
+						//Insert
+					$wpdb->insert($this->titles_tbl, array("title"=>$val,"post_id"=>$post_id,"enabled"=>$enabled));
 				}
 			}
-		endif;
+		}
+		if(isset($_POST['wpex-removed'])) {
+			if(empty($_POST['wpex-titles'])) {
+				// they deleted all the titles, just delete them all
+				$wpdb->delete($this->titles_tbl, array("post_id"=>$post_id));
+				$wpdb->delete($this->stats_tbl, array("post_id"=>$post_id));
+			} else {
+				foreach($_POST['wpex-removed'] as $val) {
+					$wpdb->delete($this->titles_tbl, array("id"=>$val,"post_id"=>$post_id));
+					$wpdb->delete($this->stats_tbl, array("title_id"=>$val,"post_id"=>$post_id));
+				}	
+			}
+		}
 	}
 
 	function is_bot() {
