@@ -254,7 +254,7 @@ class WPEx {
 	}
 
 	function titles($title, $id=NULL, $ajax = false, $viewed = false) {
-		global $wpdb;
+		global $wpdb, $titleEx;
 		if($id == NULL) return $title;
 		if(!$ajax && is_admin()) return $title;
 		$skip_pages = $this->get_option("wpex_skip_pages", 300);
@@ -267,6 +267,10 @@ class WPEx {
 		// Check if we are supposed to ignore logged in users
 		$ignore_users = $this->get_option("wpex_ignore_users", FALSE);
 		if($ignore_users && is_user_logged_in() && current_user_can('edit_post', $id)) {
+			return $title;
+		}
+
+		if($titleEx && !$titleEx->should_run_experiment($title, $id, $ajax, $viewed)) {
 			return $title;
 		}
 
@@ -312,7 +316,8 @@ class WPEx {
 
 		$title_id = null;
 		if(!$ajax && $this->get_option("wpex_use_js", false)) {
-			return "<span style='min-height: 1em; display: inline-block;' data-wpex-title-id='$id' data-original='".base64_encode($title)."'></span>";
+			$extra_attrs = $titleEx ? $titleEx->extra_js_attrs($title, $id, $ajax, $viewed) : "";
+			return "<span style='min-height: 1em; display: inline-block;' data-wpex-title-id='$id' data-original='".base64_encode($title)."' $extra_attrs></span>";
 		}
 
 		//Check if a specific post title is in our cookie 
@@ -388,8 +393,8 @@ class WPEx {
 			if(!is_array($impressions_arr)) $impressions_arr = array();
 			if(!($viewed || is_single($id) || is_page($id)) && !in_array($title_id, $impressions_arr)) {
 				$time = strtotime("midnight");
-				$this->delta_stats($result['id'], $id, $time, 1, 0);
-				$sql = "UPDATE " . $this->titles_tbl ." SET impressions=impressions+1 WHERE id=".$result['id'];
+				$this->delta_stats($title_id, $id, $time, 1, 0);
+				$sql = "UPDATE " . $this->titles_tbl ." SET impressions=impressions+1 WHERE id=".$title_id;
 				$wpdb->query($sql);
 
 				$impressions_arr[] = $title_id;
@@ -412,18 +417,19 @@ class WPEx {
 
 	function enqueue() {
 		// Register the script first.
-		wp_register_script( 'wpextitles', plugins_url('/js/titles.js',__FILE__), array("jquery"), "5.6");
+		wp_register_script( 'wpextitles', plugins_url('/js/titles.js',__FILE__), array("jquery"), "6.1");
 
 		// Now we can localize the script with our data.
 		$data = array('ajaxurl' => admin_url( 'admin-ajax.php' ));
 		wp_localize_script( 'wpextitles', 'wpex', $data );
 		// The script can be enqueued now or later.
 		wp_enqueue_script( 'wpextitles');
+
 	}
 
 	function admin_enqueue() {
-		wp_enqueue_style('wpexcss', plugins_url('css/wpex.css',__FILE__), array(), "5.6");
-		wp_enqueue_script('wpexjs', plugins_url('js/wpex.js',__FILE__), array('jquery'), "5.6");
+		wp_enqueue_style('wpexcss', plugins_url('css/wpex.css',__FILE__), array(), "6.1");
+		wp_enqueue_script('wpexjs', plugins_url('js/wpex.js',__FILE__), array('jquery'), "6.1");
 		wp_enqueue_script('jquery.sparkline.min.js', plugins_url('js/jquery.sparkline.min.js',__FILE__), array('jquery'), "0.0.1");
 		wp_enqueue_script('jquery.qtip.min.js', plugins_url('js/jquery.qtip.min.js',__FILE__), array('jquery'), "0.0.1");
 		wp_enqueue_style('jquery.qtip.min.css', plugins_url('css/jquery.qtip.min.css',__FILE__));

@@ -1,13 +1,24 @@
 (function($) {
 	$(document).ready(function() {
 		try {
-			var fetch = {};
-			var find = 0;
-			$("[data-wpex-title-id]").each(function(i, e) {
-				var id = $(e).data("wpex-title-id");
-				fetch[id] = 1;
-				find = 1;
-			});
+            var fetch = {};
+            var find = 0;
+
+            if("titlexproShouldRunExp" in window) {
+                if(!window.titlexproShouldRunExp()) {
+                	console.log("Not running exp due to pro saying no");
+                    return;
+                }
+            }
+            
+            //continue with the experiments
+			var $titles = $("[data-wpex-title-id]");
+            for(var i = $titles.length -1; i>=0; i--) {
+                var $title = $($titles[i]);
+                var id = $title.data("wpex-title-id");
+                fetch[id] = 1;
+                find = 1;
+            }
 			if(find) {
 				var id_class = document.body.className.match(/\bpostid-(\d+)\b/);
 				if(id_class) {
