@@ -163,6 +163,11 @@ class WPEx {
 		$wpdb->query($sql);
 		$sql = "DELETE FROM " . $this->stats_tbl ." WHERE post_id=".$post_id;
 		$wpdb->query($sql);
+		$sql = "SELECT COUNT(*) FROM " . $this->titles_tbl . " WHERE post_id=".$post_id." AND enabled";
+		$count = $wpdb->get_var($sql);
+		if($count > 0) {
+			$wpdb->update($this->titles_tbl, array("probability"=>round(100/$count)), array("post_id"=>$post_id, "enabled"=>1));
+		}
 	}
 
 	function get($what,$post_id) {
@@ -342,8 +347,9 @@ class WPEx {
 			//check if we need to regen the probabilities
 			$adjust_every = $this->get_option("wpex_adjust_every", 300);
 
-			if($result[0]['last_updated'] + $adjust_every < $this->now) {
-				//Use a beta distribution random number to determine which 
+			if($adjust_every >= 0 && $result[0]['last_updated'] + $adjust_every < $this->now) {
+				error_log("Calculating prob");
+				//Use a beta distribution random number to determine which
 				//test to show. Based on:
 				// http://camdp.com/blogs/multi-armed-bandits
 				require_once dirname(__FILE__).'/libs/PDL/BetaDistribution.php';
@@ -456,7 +462,7 @@ class WPEx {
 
 		$adjust_every = $this->get_option("wpex_adjust_every", 300);
 
-		if(!$reload && (($results[0]['last_updated'] + $adjust_every) < $this->now)) {
+		if(!$reload && $adjust_every >= 0 && (($results[0]['last_updated'] + $adjust_every) < $this->now)) {
 			//we need to fetch the titles
 			$this->titles($post->post_title, $post->ID, true);
 			return $this->meta_box($post, $box, true);
@@ -570,6 +576,16 @@ class WPEx {
 					$wpdb->delete($this->titles_tbl, array("id"=>$val,"post_id"=>$post_id));
 					$wpdb->delete($this->stats_tbl, array("title_id"=>$val,"post_id"=>$post_id));
 				}	
+			}
+		}
+
+		// We are never adjusting, so we need to equalize the titles
+		$adjust_every = $this->get_option("wpex_adjust_every", 300);
+		if($adjust_every == -1) {
+			$sql = "SELECT COUNT(*) FROM " . $this->titles_tbl . " WHERE post_id=".$post_id." AND enabled";
+			$count = $wpdb->get_var($sql);
+			if($count > 0) {
+				$wpdb->update($this->titles_tbl, array("probability"=>round(100/$count)), array("post_id"=>$post_id, "enabled"=>1));
 			}
 		}
 	}

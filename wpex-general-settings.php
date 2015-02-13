@@ -47,6 +47,7 @@
 							<option value="7200" <?php if($adjust_every == 7200): ?>selected<?php endif; ?>>2 hours</option>
 							<option value="14400" <?php if($adjust_every == 14400): ?>selected<?php endif; ?>>4 hours</option>
 							<option value="28800" <?php if($adjust_every == 28800): ?>selected<?php endif; ?>>8 hours</option>
+							<option value="-1" <?php if($adjust_every == -1): ?>selected<?php endif; ?>>Never</option>
 						</select>
 						<p class="description">Recalculate title display probabilities every so often. Doing it too often can slow down high traffic sites.</p>
 					</td>
