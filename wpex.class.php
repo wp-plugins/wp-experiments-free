@@ -349,7 +349,6 @@ class WPEx {
 			$adjust_every = $this->get_option("wpex_adjust_every", 300);
 
 			if($adjust_every >= 0 && $result[0]['last_updated'] + $adjust_every < $this->now) {
-				error_log("Calculating prob");
 				//Use a beta distribution random number to determine which
 				//test to show. Based on:
 				// http://camdp.com/blogs/multi-armed-bandits
