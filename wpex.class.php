@@ -338,7 +338,8 @@ class WPEx {
 			}
 		}
 
-		if(!$result) {
+		// If it isn't an array, the test id in the cookie was no longer there
+		if(!$result || !is_array($result)) {
 			$result = $titles_result;
 		}
 
