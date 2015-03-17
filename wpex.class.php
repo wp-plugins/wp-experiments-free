@@ -199,8 +199,6 @@ class WPEx {
 		
 		$result = $wpdb->get_row($sql);
 		if($result) {
-			mt_srand();
-			// fake the time right now
 			$time = strtotime("midnight");
 			$this->delta_stats($title_id, $post_id, $time, 0, 1);
 			$sql = "UPDATE " . $this->titles_tbl ." SET clicks=clicks+1 WHERE id=".$title_id;
@@ -533,6 +531,11 @@ class WPEx {
 	function save_blocks($post_id) {
 		global $wpdb;
 
+        if($post_id != $_POST['ID']) {
+            // this is the result of the 'Preview' button being clicked and will cause problems with our titles!
+            return;
+        }
+
 		// Check if our nonce is set.
 		if ( ! isset( $_POST['titlexp_meta_box_nonce'] ) ) {
 			return;
@@ -544,7 +547,7 @@ class WPEx {
 
 		// If this is an autosave, our form has not been submitted, so we don't want to do anything.
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return;
+            return;
 		}
 		
 		if(isset($_POST['wpex-titles'])) {
