@@ -38,6 +38,7 @@ class WPEx {
 		add_action( 'wp_ajax_wpex_hide_nag', array($this,'hide_sale_nag'));
 		add_action( 'wp_ajax_wpex_stat_reset', array($this,'reset_stats'));
 		add_action( 'wp_ajax_wpex_titles', array($this,'ajax_titles'));
+		add_action( 'wp_ajax_wpex_clear_stats', array($this,'clear_stats'));
 		add_action( 'wp_ajax_nopriv_wpex_titles', array($this,'ajax_titles'));
 		
 		add_action( 'wp_ajax_nopriv_wpex_setcookies', array($this,'set_cookies'));
@@ -129,7 +130,7 @@ class WPEx {
 	}
 
 	function settings_menu() {
-		add_submenu_page('options-general.php', 'Title Exp Settings', 'Title Exp Settings', 'edit_posts', "wpex-settings", array($this,"general_settings") );
+		add_submenu_page('options-general.php', 'Title Exp Settings', 'Title Exp Settings', 'manage_options', "wpex-settings", array($this,"general_settings") );
 	}
 
 	// The general settings page
@@ -154,6 +155,20 @@ class WPEx {
 		$skip_pages = $this->get_option("wpex_skip_pages", 300);
 		$ignore_users = $this->get_option("wpex_ignore_users", FALSE);
 		include 'wpex-general-settings.php';
+	}
+	
+	function clear_stats() {
+		global $wpdb;
+		$sql = "UPDATE " . $this->titles_tbl ." SET clicks=0,impressions=0,stats=''";
+		$wpdb->query($sql);
+		$sql = "DELETE FROM " . $this->stats_tbl .";";
+		$wpdb->query($sql);
+		
+		$sql = "SELECT post_id, COUNT(*) as count FROM " . $this->titles_tbl . " WHERE enabled GROUP BY post_id";
+		$titles_result = $wpdb->get_results($sql, ARRAY_A);
+		foreach ($titles_result as $row) {
+			$wpdb->update($this->titles_tbl, array("probability"=>round(100/$row['count'])), array("post_id"=>$row['post_id'], "enabled"=>1));
+		}
 	}
 
 	function reset_stats($data) {

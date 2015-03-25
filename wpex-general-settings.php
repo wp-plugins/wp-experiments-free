@@ -75,7 +75,7 @@
 					<th></th>
 					<td>
 						<input type="submit" class="button-primary" name="save" value="Save Settings" />
-						<a style="float: right;" href="#" id="wpexClearSessions">[clear sessions]</a>
+						<a style="float: right;" href="#" id="wpexClearStats">[clear all statistics]</a>
 					</td>
 				</tr>
 			</tbody>
@@ -84,14 +84,17 @@
 	<p>For more information, visit <a href='https://wpexperiments.com/title-experiments/'>wpexperiments.com/title-experiments/</a></p>
 </div>
 <script type='text/javascript'>
-	jQuery("#wpexClearSessions").click(function() {
-		var data = {
-			'action': 'wpex_clear_sessions'
-		};
-		// since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
-		jQuery.post(ajaxurl, data, function(response) {
-			window.location.reload();
-		});
+	jQuery("#wpexClearStats").click(function() {
+		if(confirm("This will clear all statistics for all the alternate titles. Are you sure you want to do this?")) {
+			var data = {
+				'action': 'wpex_clear_stats'
+			};
+			// since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
+			jQuery.post(ajaxurl, data, function(response) {
+				window.location.reload();
+			});
+		}
 		return false;
 	});
+
 </script>
