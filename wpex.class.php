@@ -295,7 +295,6 @@ class WPEx {
 		// ensure consistant ordering
 		$sql = "SELECT id,title,impressions,clicks,probability,last_updated FROM " . $this->titles_tbl . " WHERE enabled=1 AND post_id=".$id." ORDER BY id";
 		$titles_result = $wpdb->get_results($sql, ARRAY_A);
-		
 		if(count($titles_result) === 0) {
 			//No titles are here
 			return $title;
@@ -388,10 +387,10 @@ class WPEx {
 			// less than the sum of all the previous probabilties
 			// that we've checked so far. It works - test it. :)
 			
-			// mt_srand(); // no need to do this http://php.net/manual/en/function.mt-srand.php
+			mt_srand(); // no need to do this http://php.net/manual/en/function.mt-srand.php
 			$rand = mt_rand(0,100);
 			$total = 0;
-			foreach($result as $t) {
+			foreach($result as &$t) {
 				if($rand < ($total + $t['probability'])) {
 					break;
 				}

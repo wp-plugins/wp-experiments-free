@@ -1,5 +1,4 @@
-(function($) {
-	$(document).ready(function() {
+function titleex_run_experiment() {
 		try {
             var fetch = {};
             var find = 0;
@@ -12,10 +11,11 @@
             }
             
             //continue with the experiments
-			var $titles = $("[data-wpex-title-id]");
+			var $titles = jQuery("[data-wpex-title-id]:not([data-wpex-done])");
             for(var i = $titles.length -1; i>=0; i--) {
-                var $title = $($titles[i]);
+                var $title = jQuery($titles[i]);
                 var id = $title.data("wpex-title-id");
+                $title.attr("data-wpex-done", 1);
                 fetch[id] = 1;
                 find = 1;
             }
@@ -26,26 +26,28 @@
 				} else {
 					cur_id = -1;
 				}
-				$.post(wpex.ajaxurl, {
+
+				jQuery.post(wpex.ajaxurl, {
 					action: 'wpex_titles',
 					id: Object.keys(fetch),
 					cur_id: cur_id
 				}, function(res) {
 					for(var id in res) {
-						var $elm = $("[data-wpex-title-id="+id+"]");
+						var $elm = jQuery("[data-wpex-title-id="+id+"]");
 						if(!res[id]) {
 							$elm.html(Base64.decode($elm.data("original")));
 						} else {
-							$("[data-wpex-title-id="+id+"]").html(res[id]);
+							jQuery("[data-wpex-title-id="+id+"]").html(res[id]);
 						}
 					}
 				}, 'json');
 			}
 		} catch(err) {
-			$("body").show();
+			jQuery("body").show();
 		}
-	});
-})(jQuery);
+}
+
+jQuery(document).ready(titleex_run_experiment);
 
 /**
 *
