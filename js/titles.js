@@ -34,10 +34,10 @@ function titleex_run_experiment() {
 				}, function(res) {
 					for(var id in res) {
 						var $elm = jQuery("[data-wpex-title-id="+id+"]");
-						if(!res[id]) {
-							$elm.html(Base64.decode($elm.data("original")));
+                        if(!res[id]) {
+                            $elm.parent().html(Base64.decode($elm.data("original")))
 						} else {
-							jQuery("[data-wpex-title-id="+id+"]").html(res[id]);
+							$elm.html(res[id]);
 						}
 					}
 				}, 'json');

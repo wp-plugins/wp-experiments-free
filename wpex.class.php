@@ -300,6 +300,18 @@ class WPEx {
 			return $title;
 		}
 
+        $transient_key = md5( __FUNCTION__ . $id );
+        if (false == ( $titles_result = get_transient( $transient_key ) )) {
+            // ensure consistant ordering
+            $sql = "SELECT id,title,impressions,clicks,probability,last_updated FROM " . $this->titles_tbl . " WHERE enabled=1 AND post_id=" . $id . " ORDER BY id";
+            $titles_result = $wpdb->get_results( $sql, ARRAY_A );
+            set_transient( $transient_key, $titles_result );
+            if (count( $titles_result ) === 0) {
+                //No titles are here
+                return $title;
+            }
+        }
+
 		$search_engines = $this->get_option("wpex_search_engines", "first");
 
 		// search engines should see the first title
@@ -380,6 +392,7 @@ class WPEx {
 					$sql = "UPDATE " . $this->titles_tbl ." SET probability=".$test['probability'].", last_updated=".$this->now." WHERE id=".$test['id'];
 					$wpdb->query($sql);
 				}
+                delete_transient($transient_key);
 			}
 
 			// We pick a random number and then loop
