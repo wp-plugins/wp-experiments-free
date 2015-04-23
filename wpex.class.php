@@ -386,12 +386,27 @@ class WPEx {
 				}
 
 				$this->statTests = $result;
+
+				$total_probability = 0;
 				foreach($result as $idx=>&$test) {
 					$this->statChecking = $idx;
 					$test['probability'] = round($this->simpsonsrule() * 100);
+					$total_probability += $test['probability'];
 					$sql = "UPDATE " . $this->titles_tbl ." SET probability=".$test['probability'].", last_updated=".$this->now." WHERE id=".$test['id'];
 					$wpdb->query($sql);
 				}
+				
+				// for some reason, the probabiltiy is greater than 100
+				// sometimes. This isn't a problem really, but let's normalize it
+				if($total_probability != 100) {
+					$diff = round(($total_probability - 100) / count($result));
+					foreach($result as $idx=>&$test) {
+						$test['probability'] -= $diff; 
+						$sql = "UPDATE " . $this->titles_tbl ." SET probability=".$test['probability'].", WHERE id=".$test['id'];
+						$wpdb->query($sql);
+					}
+				}
+
                 delete_transient($transient_key);
 			}
 
