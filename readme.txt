@@ -4,7 +4,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: conversions, ab testing, optimization, headlines, split testing, titles, t
 Requires at least: 3.9
 Tested up to: 4.0
-Stable tag: 6.9
+Stable tag: 7.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -35,7 +35,11 @@ Check out https://wpexperiments.com/title-experiments/
 
 1. Add multiple titles and see how many people view the article with that title.
 
+
 == Changelog ==
+
+= 7.0 =
+* Bug fix for probabilities displaying over 100%
 
 = 6.8 =
 * Set default database table collation when installing
