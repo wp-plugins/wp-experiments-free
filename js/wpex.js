@@ -17,7 +17,7 @@
 			for(var x in _wpex_data) {
 				total_probability += parseInt(_wpex_data[x].probability);
 			}
-			var scaleFactor = 100/total_probability;
+			var scaleFactor = total_probability > 0 ? (100/total_probability) : 1;
 			for(var k in _wpex_data) {
 				trow = _wpex_data[k];
 				trow.probability = Math.round(parseInt(trow.probability)*scaleFactor);

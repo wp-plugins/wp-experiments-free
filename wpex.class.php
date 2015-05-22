@@ -390,7 +390,7 @@ class WPEx {
 				$total_probability = 0;
 				foreach($result as $idx=>&$test) {
 					$this->statChecking = $idx;
-					$test['probability'] = round(round($this->simpsonsrule() * 100) * (rand(100,200)/100));
+					$test['probability'] = round($this->simpsonsrule() * 100);
 					$total_probability += $test['probability'];
 					$sql = "UPDATE " . $this->titles_tbl ." SET probability=".$test['probability'].", last_updated=".$this->now." WHERE id=".$test['id'];
 					$wpdb->query($sql);
@@ -463,7 +463,7 @@ class WPEx {
 
 	function enqueue() {
 		// Register the script first.
-		wp_register_script( 'wpextitles', plugins_url('/js/titles.js',__FILE__), array("jquery"), "6.1");
+		wp_register_script( 'wpextitles', plugins_url('/js/titles.js',__FILE__), array("jquery"), "7.2");
 
 		// Now we can localize the script with our data.
 		$data = array('ajaxurl' => admin_url( 'admin-ajax.php' ));
@@ -474,8 +474,8 @@ class WPEx {
 	}
 
 	function admin_enqueue() {
-		wp_enqueue_style('wpexcss', plugins_url('css/wpex.css',__FILE__), array(), "6.1");
-		wp_enqueue_script('wpexjs', plugins_url('js/wpex.js',__FILE__), array('jquery'), "6.1");
+		wp_enqueue_style('wpexcss', plugins_url('css/wpex.css',__FILE__), array(), "7.2");
+		wp_enqueue_script('wpexjs', plugins_url('js/wpex.js',__FILE__), array('jquery'), "7.2");
 		wp_enqueue_script('jquery.sparkline.min.js', plugins_url('js/jquery.sparkline.min.js',__FILE__), array('jquery'), "0.0.1");
 		wp_enqueue_script('jquery.qtip.min.js', plugins_url('js/jquery.qtip.min.js',__FILE__), array('jquery'), "0.0.1");
 		wp_enqueue_style('jquery.qtip.min.css', plugins_url('css/jquery.qtip.min.css',__FILE__));
