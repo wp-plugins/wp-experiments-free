@@ -398,7 +398,7 @@ class WPEx {
 				
 				// for some reason, the probabiltiy is greater than 100
 				// sometimes. This isn't a problem really, but let's normalize it
-				if($total_probability != 100) {
+				if($total_probability != 100 && $total_probability > 0) {
 					$ratio = 100/$total_probability;
 					foreach($result as $idx=>&$test) {
 						$test['probability'] = round($test['probability'] * $ratio);
